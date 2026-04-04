@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+# Start the Phoenix server in foreground mode (required by Fly.io)
+exec /app/bin/pulse start

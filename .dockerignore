@@ -1,0 +1,25 @@
+# Ignore build artifacts
+/_build
+/cover
+/deps
+/doc
+/.fetch
+/priv/static/assets
+
+# Ignore test and dev files
+/test
+/.elixir_ls
+/.credo.exs
+
+# Ignore secrets
+/config/*.secret.exs
+
+# Ignore version control
+/.git
+/.gitignore
+
+# Ignore node_modules if present
+/assets/node_modules
+
+# Ignore OS files
+.DS_Store
