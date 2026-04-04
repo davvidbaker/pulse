@@ -15,15 +15,15 @@ defmodule Pulse.Setup.EnergySource do
   }
 
   schema "energy_sources" do
-    field :source_type, :string
-    field :name, :string
-    field :unit, :string
-    field :metadata, :map, default: %{}
-    field :active, :boolean, default: true
+    field(:source_type, :string)
+    field(:name, :string)
+    field(:unit, :string)
+    field(:metadata, :map, default: %{})
+    field(:active, :boolean, default: true)
 
-    belongs_to :user, Pulse.Accounts.User
-    has_many :usage_logs, Pulse.Logs.UsageLog
-    has_many :suggestions, Pulse.Suggestions.Suggestion
+    belongs_to(:user, Pulse.Accounts.User)
+    has_many(:usage_logs, Pulse.Logs.UsageLog)
+    has_many(:suggestions, Pulse.Suggestions.Suggestion)
 
     timestamps(type: :utc_datetime)
   end

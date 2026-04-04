@@ -33,7 +33,8 @@ defmodule PulseWeb.UserSettingsLive do
           &url(~p"/users/settings/confirm-email/#{&1}")
         )
 
-        {:noreply, put_flash(socket, :info, "Check your new email for confirmation instructions.")}
+        {:noreply,
+         put_flash(socket, :info, "Check your new email for confirmation instructions.")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :email_form, to_form(changeset))}

@@ -8,19 +8,19 @@ defmodule Pulse.Logs.UsageLog do
   @input_types ~w(duration quantity)
 
   schema "usage_logs" do
-    field :logged_at, :utc_datetime
-    field :duration_minutes, :integer
-    field :quantity, :decimal
-    field :input_type, :string
-    field :notes, :string
+    field(:logged_at, :utc_datetime)
+    field(:duration_minutes, :integer)
+    field(:quantity, :decimal)
+    field(:input_type, :string)
+    field(:notes, :string)
 
     # Computed async by CalculationWorker
-    field :computed_kwh, :decimal
-    field :computed_cost, :decimal
-    field :computed_at, :utc_datetime
+    field(:computed_kwh, :decimal)
+    field(:computed_cost, :decimal)
+    field(:computed_at, :utc_datetime)
 
-    belongs_to :user, Pulse.Accounts.User
-    belongs_to :energy_source, Pulse.Setup.EnergySource
+    belongs_to(:user, Pulse.Accounts.User)
+    belongs_to(:energy_source, Pulse.Setup.EnergySource)
 
     timestamps(type: :utc_datetime)
   end

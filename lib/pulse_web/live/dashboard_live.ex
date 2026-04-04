@@ -60,10 +60,13 @@ defmodule PulseWeb.DashboardLive do
 
     {from_date, to_date} =
       case period do
-        :day -> {today, today}
+        :day ->
+          {today, today}
+
         :week ->
           week_start = Date.add(today, -Date.day_of_week(today) + 1)
           {week_start, today}
+
         :month ->
           {Date.beginning_of_month(today), today}
       end

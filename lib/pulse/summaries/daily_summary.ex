@@ -6,13 +6,13 @@ defmodule Pulse.Summaries.DailySummary do
   @foreign_key_type :binary_id
 
   schema "daily_summaries" do
-    field :date, :date
-    field :total_kwh, :decimal, default: Decimal.new(0)
-    field :total_cost, :decimal, default: Decimal.new(0)
+    field(:date, :date)
+    field(:total_kwh, :decimal, default: Decimal.new(0))
+    field(:total_cost, :decimal, default: Decimal.new(0))
     # %{source_id => %{kwh: float, cost: float}}
-    field :breakdown, :map, default: %{}
+    field(:breakdown, :map, default: %{})
 
-    belongs_to :user, Pulse.Accounts.User
+    belongs_to(:user, Pulse.Accounts.User)
 
     timestamps(type: :utc_datetime)
   end

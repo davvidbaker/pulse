@@ -6,10 +6,10 @@ defmodule Pulse.Gamification.UserBadge do
   @foreign_key_type :binary_id
 
   schema "user_badges" do
-    field :awarded_at, :utc_datetime
+    field(:awarded_at, :utc_datetime)
 
-    belongs_to :user, Pulse.Accounts.User
-    belongs_to :badge, Pulse.Gamification.Badge
+    belongs_to(:user, Pulse.Accounts.User)
+    belongs_to(:badge, Pulse.Gamification.Badge)
 
     timestamps(type: :utc_datetime)
   end

@@ -20,7 +20,8 @@ defmodule Pulse.Engine.Fuel do
   @default_avg_speed_kmh 50.0
 
   @spec calculate(map(), map()) :: {:ok, map()} | {:error, String.t()}
-  def calculate(%{duration_minutes: duration}, metadata) when is_integer(duration) and duration > 0 do
+  def calculate(%{duration_minutes: duration}, metadata)
+      when is_integer(duration) and duration > 0 do
     consumption = parse_float(metadata["consumption_per_100km"])
     cost_per_liter = parse_float(metadata["cost_per_liter"])
     fuel_type = metadata["fuel_type"] || "petrol"
@@ -70,11 +71,13 @@ defmodule Pulse.Engine.Fuel do
 
   defp parse_float(val) when is_float(val), do: val
   defp parse_float(val) when is_integer(val), do: val * 1.0
+
   defp parse_float(val) when is_binary(val) do
     case Float.parse(val) do
       {f, _} -> f
       :error -> nil
     end
   end
+
   defp parse_float(_), do: nil
 end

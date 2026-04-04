@@ -69,6 +69,7 @@ defmodule Pulse.Gamification do
       UsageLog
       |> where([l], l.user_id == ^user_id)
       |> Repo.aggregate(:count, :id)
+
     actual_count >= required_count
   end
 

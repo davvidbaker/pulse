@@ -28,7 +28,8 @@ defmodule Pulse.Engine.GasTest do
     end
 
     test "returns error when metadata is missing rated_output_kw" do
-      assert {:error, _} = Gas.calculate(%{duration_minutes: 60}, %{"cost_per_cubic_meter" => 0.08})
+      assert {:error, _} =
+               Gas.calculate(%{duration_minutes: 60}, %{"cost_per_cubic_meter" => 0.08})
     end
   end
 end

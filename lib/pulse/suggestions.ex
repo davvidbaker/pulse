@@ -24,7 +24,9 @@ defmodule Pulse.Suggestions do
   @spec dismiss_suggestion(binary(), binary()) :: {:ok, Suggestion.t()} | {:error, term()}
   def dismiss_suggestion(user_id, suggestion_id) do
     case Repo.get_by(Suggestion, id: suggestion_id, user_id: user_id) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       suggestion ->
         now = DateTime.utc_now() |> DateTime.truncate(:second)
         suggestion |> Suggestion.changeset(%{dismissed_at: now}) |> Repo.update()
@@ -34,7 +36,9 @@ defmodule Pulse.Suggestions do
   @spec act_on_suggestion(binary(), binary()) :: {:ok, Suggestion.t()} | {:error, term()}
   def act_on_suggestion(user_id, suggestion_id) do
     case Repo.get_by(Suggestion, id: suggestion_id, user_id: user_id) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       suggestion ->
         now = DateTime.utc_now() |> DateTime.truncate(:second)
         suggestion |> Suggestion.changeset(%{acted_on_at: now}) |> Repo.update()
@@ -131,7 +135,8 @@ defmodule Pulse.Suggestions do
         |> Repo.one()
 
       if avg_duration && avg_duration > reference_duration * 1.2 do
-        excess_pct = Float.round((avg_duration - reference_duration) / reference_duration * 100, 0)
+        excess_pct =
+          Float.round((avg_duration - reference_duration) / reference_duration * 100, 0)
 
         upsert_suggestion(user_id, source.id, "reduce_duration", %{
           title: "Reduce #{source.name} session length",

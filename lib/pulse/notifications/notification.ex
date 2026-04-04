@@ -8,14 +8,14 @@ defmodule Pulse.Notifications.Notification do
   @types ~w(threshold_exceeded weekly_summary badge_awarded suggestion)
 
   schema "notifications" do
-    field :type, :string
-    field :title, :string
-    field :body, :string
-    field :read_at, :utc_datetime
-    field :payload, :map, default: %{}
+    field(:type, :string)
+    field(:title, :string)
+    field(:body, :string)
+    field(:read_at, :utc_datetime)
+    field(:payload, :map, default: %{})
 
-    belongs_to :user, Pulse.Accounts.User
-    belongs_to :notification_rule, Pulse.Notifications.NotificationRule
+    belongs_to(:user, Pulse.Accounts.User)
+    belongs_to(:notification_rule, Pulse.Notifications.NotificationRule)
 
     timestamps(type: :utc_datetime, updated_at: false)
   end

@@ -28,7 +28,8 @@ defmodule Pulse.Engine.ElectricityTest do
     end
 
     test "returns error when duration is missing" do
-      assert {:error, _} = Electricity.calculate(%{duration_minutes: 0, logged_at: nil}, @metadata)
+      assert {:error, _} =
+               Electricity.calculate(%{duration_minutes: 0, logged_at: nil}, @metadata)
     end
 
     test "returns error when metadata is incomplete" do

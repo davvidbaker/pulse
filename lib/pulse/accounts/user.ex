@@ -6,19 +6,19 @@ defmodule Pulse.Accounts.User do
   @foreign_key_type :binary_id
 
   schema "users" do
-    field :email, :string
-    field :password, :string, virtual: true, redact: true
-    field :hashed_password, :string, redact: true
-    field :confirmed_at, :utc_datetime
-    field :timezone, :string, default: "UTC"
+    field(:email, :string)
+    field(:password, :string, virtual: true, redact: true)
+    field(:hashed_password, :string, redact: true)
+    field(:confirmed_at, :utc_datetime)
+    field(:timezone, :string, default: "UTC")
 
-    has_many :energy_sources, Pulse.Setup.EnergySource
-    has_many :usage_logs, Pulse.Logs.UsageLog
-    has_many :daily_summaries, Pulse.Summaries.DailySummary
-    has_many :user_badges, Pulse.Gamification.UserBadge
-    has_many :notification_rules, Pulse.Notifications.NotificationRule
-    has_many :notifications, Pulse.Notifications.Notification
-    has_many :suggestions, Pulse.Suggestions.Suggestion
+    has_many(:energy_sources, Pulse.Setup.EnergySource)
+    has_many(:usage_logs, Pulse.Logs.UsageLog)
+    has_many(:daily_summaries, Pulse.Summaries.DailySummary)
+    has_many(:user_badges, Pulse.Gamification.UserBadge)
+    has_many(:notification_rules, Pulse.Notifications.NotificationRule)
+    has_many(:notifications, Pulse.Notifications.Notification)
+    has_many(:suggestions, Pulse.Suggestions.Suggestion)
 
     timestamps(type: :utc_datetime)
   end

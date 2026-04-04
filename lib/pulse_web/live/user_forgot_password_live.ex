@@ -19,7 +19,10 @@ defmodule PulseWeb.UserForgotPasswordLive do
 
     {:noreply,
      socket
-     |> put_flash(:info, "If that email is registered, you'll receive reset instructions shortly.")
+     |> put_flash(
+       :info,
+       "If that email is registered, you'll receive reset instructions shortly."
+     )
      |> redirect(to: ~p"/login")}
   end
 

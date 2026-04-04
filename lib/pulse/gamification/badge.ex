@@ -5,14 +5,14 @@ defmodule Pulse.Gamification.Badge do
   @primary_key {:id, :binary_id, autogenerate: true}
 
   schema "badges" do
-    field :key, :string
-    field :name, :string
-    field :description, :string
-    field :icon, :string
+    field(:key, :string)
+    field(:name, :string)
+    field(:description, :string)
+    field(:icon, :string)
     # e.g. %{"type" => "log_count", "count" => 1}
-    field :criteria, :map, default: %{}
+    field(:criteria, :map, default: %{})
 
-    has_many :user_badges, Pulse.Gamification.UserBadge
+    has_many(:user_badges, Pulse.Gamification.UserBadge)
 
     timestamps(type: :utc_datetime)
   end

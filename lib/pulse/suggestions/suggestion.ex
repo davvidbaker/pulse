@@ -8,16 +8,16 @@ defmodule Pulse.Suggestions.Suggestion do
   @suggestion_types ~w(time_shift reduce_duration upgrade_device)
 
   schema "suggestions" do
-    field :suggestion_type, :string
-    field :title, :string
-    field :body, :string
-    field :estimated_saving_weekly, :decimal
-    field :generated_at, :utc_datetime
-    field :dismissed_at, :utc_datetime
-    field :acted_on_at, :utc_datetime
+    field(:suggestion_type, :string)
+    field(:title, :string)
+    field(:body, :string)
+    field(:estimated_saving_weekly, :decimal)
+    field(:generated_at, :utc_datetime)
+    field(:dismissed_at, :utc_datetime)
+    field(:acted_on_at, :utc_datetime)
 
-    belongs_to :user, Pulse.Accounts.User
-    belongs_to :energy_source, Pulse.Setup.EnergySource
+    belongs_to(:user, Pulse.Accounts.User)
+    belongs_to(:energy_source, Pulse.Setup.EnergySource)
 
     timestamps(type: :utc_datetime)
   end

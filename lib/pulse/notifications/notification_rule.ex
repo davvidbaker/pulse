@@ -8,13 +8,13 @@ defmodule Pulse.Notifications.NotificationRule do
   @rule_types ~w(threshold_daily_cost threshold_weekly_cost threshold_kwh)
 
   schema "notification_rules" do
-    field :rule_type, :string
-    field :threshold_value, :decimal
-    field :enabled, :boolean, default: true
+    field(:rule_type, :string)
+    field(:threshold_value, :decimal)
+    field(:enabled, :boolean, default: true)
 
-    belongs_to :user, Pulse.Accounts.User
+    belongs_to(:user, Pulse.Accounts.User)
     # nil = any source
-    belongs_to :energy_source, Pulse.Setup.EnergySource
+    belongs_to(:energy_source, Pulse.Setup.EnergySource)
 
     timestamps(type: :utc_datetime)
   end

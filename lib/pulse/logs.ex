@@ -97,7 +97,10 @@ defmodule Pulse.Logs do
     cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
 
     UsageLog
-    |> where([l], l.user_id == ^user_id and l.logged_at >= ^cutoff and not is_nil(l.computed_cost))
+    |> where(
+      [l],
+      l.user_id == ^user_id and l.logged_at >= ^cutoff and not is_nil(l.computed_cost)
+    )
     |> order_by([l], desc: l.logged_at)
     |> Repo.all()
   end

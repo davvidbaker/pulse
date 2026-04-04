@@ -135,8 +135,7 @@ defmodule Pulse.Summaries do
       |> distinct(true)
       |> Repo.aggregate(:count)
 
-    percentile =
-      if total_users > 0, do: below_user_count / total_users * 100.0, else: 50.0
+    percentile = if total_users > 0, do: below_user_count / total_users * 100.0, else: 50.0
 
     %{
       user_weekly_cost: user_cost,
@@ -145,7 +144,10 @@ defmodule Pulse.Summaries do
     }
   end
 
-  @spec aggregate_range(binary(), Date.t(), Date.t()) :: %{total_cost: Decimal.t(), total_kwh: Decimal.t()}
+  @spec aggregate_range(binary(), Date.t(), Date.t()) :: %{
+          total_cost: Decimal.t(),
+          total_kwh: Decimal.t()
+        }
   def aggregate_range(user_id, from_date, to_date) do
     result =
       DailySummary

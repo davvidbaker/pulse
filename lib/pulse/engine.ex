@@ -65,7 +65,10 @@ defmodule Pulse.Engine do
   Estimate daily usage projection based on a list of recent log results.
   Returns the average daily cost and kwh over the provided logs.
   """
-  @spec estimate_daily([map()], pos_integer()) :: %{avg_daily_cost: Decimal.t(), avg_daily_kwh: Decimal.t()}
+  @spec estimate_daily([map()], pos_integer()) :: %{
+          avg_daily_cost: Decimal.t(),
+          avg_daily_kwh: Decimal.t()
+        }
   def estimate_daily(computed_logs, days \\ 14) when length(computed_logs) > 0 do
     total_cost =
       Enum.reduce(computed_logs, Decimal.new(0), fn log, acc ->

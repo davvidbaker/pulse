@@ -10,7 +10,7 @@ defmodule PulseWeb.CoreComponents do
   alias Phoenix.LiveView.JS
 
   @doc "Flash message group"
-  attr :flash, :map, required: true
+  attr(:flash, :map, required: true)
 
   def flash_group(assigns) do
     ~H"""
@@ -21,8 +21,8 @@ defmodule PulseWeb.CoreComponents do
     """
   end
 
-  attr :kind, :atom, values: [:info, :error]
-  attr :flash, :map, required: true
+  attr(:kind, :atom, values: [:info, :error])
+  attr(:flash, :map, required: true)
 
   def flash(assigns) do
     ~H"""
@@ -40,10 +40,10 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc "A modal dialog component."
-  attr :id, :string, required: true
-  attr :show, :boolean, default: false
-  attr :on_cancel, JS, default: %JS{}
-  slot :inner_block, required: true
+  attr(:id, :string, required: true)
+  attr(:show, :boolean, default: false)
+  attr(:on_cancel, JS, default: %JS{})
+  slot(:inner_block, required: true)
 
   def modal(assigns) do
     ~H"""
@@ -73,7 +73,10 @@ defmodule PulseWeb.CoreComponents do
   def show_modal(js \\ %JS{}, id) when is_binary(id) do
     js
     |> JS.show(to: "##{id}")
-    |> JS.show(to: "##{id} [data-modal-bg]", transition: {"ease-out duration-200", "opacity-0", "opacity-100"})
+    |> JS.show(
+      to: "##{id} [data-modal-bg]",
+      transition: {"ease-out duration-200", "opacity-0", "opacity-100"}
+    )
   end
 
   def hide_modal(js \\ %JS{}, id) do
@@ -82,10 +85,10 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc "Stat card for the dashboard"
-  attr :label, :string, required: true
-  attr :value, :string, required: true
-  attr :unit, :string, default: ""
-  attr :trend, :string, default: nil
+  attr(:label, :string, required: true)
+  attr(:value, :string, required: true)
+  attr(:unit, :string, default: "")
+  attr(:trend, :string, default: nil)
 
   def stat_card(assigns) do
     ~H"""
@@ -100,8 +103,8 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc "Suggestion card"
-  attr :suggestion, :map, required: true
-  attr :on_dismiss, JS, default: %JS{}
+  attr(:suggestion, :map, required: true)
+  attr(:on_dismiss, JS, default: %JS{})
 
   def suggestion_card(assigns) do
     ~H"""
@@ -127,7 +130,7 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc "Source type badge"
-  attr :source_type, :string, required: true
+  attr(:source_type, :string, required: true)
 
   def source_badge(assigns) do
     ~H"""
@@ -152,11 +155,11 @@ defmodule PulseWeb.CoreComponents do
   defp source_icon(_), do: "📦"
 
   @doc "Simple button"
-  attr :type, :string, default: "button"
-  attr :variant, :atom, values: [:primary, :secondary, :danger], default: :primary
-  attr :class, :string, default: ""
-  attr :rest, :global
-  slot :inner_block, required: true
+  attr(:type, :string, default: "button")
+  attr(:variant, :atom, values: [:primary, :secondary, :danger], default: :primary)
+  attr(:class, :string, default: "")
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
 
   def button(assigns) do
     ~H"""
@@ -177,14 +180,14 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc "Form input with label and error"
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-  attr :type, :string, default: "text"
-  attr :errors, :list, default: []
-  attr :rest, :global, include: ~w(placeholder required min max step)
-  slot :inner_block
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
+  attr(:type, :string, default: "text")
+  attr(:errors, :list, default: [])
+  attr(:rest, :global, include: ~w(placeholder required min max step))
+  slot(:inner_block)
 
   def input(assigns) do
     ~H"""
@@ -209,13 +212,13 @@ defmodule PulseWeb.CoreComponents do
     """
   end
 
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-  attr :options, :list, default: []
-  attr :errors, :list, default: []
-  attr :rest, :global
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
+  attr(:options, :list, default: [])
+  attr(:errors, :list, default: [])
+  attr(:rest, :global)
 
   def select(assigns) do
     ~H"""
