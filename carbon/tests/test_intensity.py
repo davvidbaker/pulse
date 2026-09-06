@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from pulse_carbon.intensity import us_daily_mean
+from pulse_carbon.intensity import USER_AGENT, fetch_ba_intensity, us_daily_mean
 
 
 def _payload(ba: str, intensities: list[float], day: str = "2026-09-03") -> dict:
@@ -46,3 +46,35 @@ def test_us_daily_mean_ignores_other_utc_days():
 def test_us_daily_mean_requires_enough_hours():
     with pytest.raises(ValueError, match="need at least"):
         us_daily_mean([_payload("CISO", [0.1] * 4)], observed_on=date(2026, 9, 3))
+
+
+class _FakeResponse:
+    def __init__(self, payload: dict):
+        import json
+
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def test_fetch_ba_intensity_sends_user_agent():
+    captured = {}
+
+    def opener(request, timeout=30):
+        captured["url"] = request.full_url
+        captured["user_agent"] = request.get_header("User-agent")
+        captured["accept"] = request.get_header("Accept")
+        return _FakeResponse(_payload("CISO", [0.1] * 24))
+
+    payload = fetch_ba_intensity("CISO", hours=24, opener=opener)
+    assert payload["balancing_authority"] == "CISO"
+    assert captured["url"].endswith("/api/intensity?ba=CISO&hours=24")
+    assert captured["user_agent"] == USER_AGENT
+    assert captured["accept"] == "application/json"
