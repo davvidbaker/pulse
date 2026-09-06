@@ -27,5 +27,23 @@ while ! python3 -c "import socket; socket.create_connection(('127.0.0.1', 3000),
 done
 
 dagster-daemon run &
+
+# Schedules stay STOPPED in the instance DB unless started. Keep the daily
+# carbon job on across restarts even if it was first loaded as stopped.
+(
+  i=0
+  while [ "$i" -lt 30 ]; do
+    if dagster schedule start daily_us_carbon_schedule >/tmp/pulse-carbon-schedule.log 2>&1; then
+      echo "started daily_us_carbon_schedule" >&2
+      break
+    fi
+    if grep -qiE 'already running|already started' /tmp/pulse-carbon-schedule.log; then
+      break
+    fi
+    i=$((i + 1))
+    sleep 2
+  done
+) &
+
 nginx
 wait "$web_pid"

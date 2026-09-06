@@ -43,7 +43,9 @@ fly secrets set \
 fly deploy --app pulse-carbon
 ```
 
-Then in the Dagster UI, turn on `daily_us_carbon_schedule`.
+`daily_us_carbon_schedule` starts as **running** (18:00 UTC daily). Boot also
+calls `dagster schedule start` so a volume that first loaded it as stopped
+still ticks.
 
 UI: `https://pulse-carbon.fly.dev` (HTTP basic auth).
 

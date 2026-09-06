@@ -62,4 +62,5 @@ daily_carbon_schedule = dg.ScheduleDefinition(
     job=daily_carbon_job,
     cron_schedule="0 18 * * *",
     execution_timezone="UTC",
+    default_status=dg.DefaultScheduleStatus.RUNNING,
 )
