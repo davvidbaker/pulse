@@ -4,10 +4,8 @@ defmodule Pulse.Accounts do
   Handles registration, authentication, password reset, and email confirmation.
   """
 
-  import Ecto.Query
   alias Pulse.Repo
   alias Pulse.Accounts.{User, UserToken}
-  alias Pulse.Mailer
 
   ## User queries
 

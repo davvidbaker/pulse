@@ -38,7 +38,7 @@ config :logger, :console,
 
 config :phoenix, :json_library, Jason
 
-config :oban,
+config :pulse, Oban,
   repo: Pulse.Repo,
   queues: [default: 10, calculations: 5, notifications: 2, suggestions: 2],
   plugins: [

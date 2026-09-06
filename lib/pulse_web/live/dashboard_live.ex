@@ -1,7 +1,7 @@
 defmodule PulseWeb.DashboardLive do
   use PulseWeb, :live_view
 
-  alias Pulse.{Summaries, Suggestions, Notifications}
+  alias Pulse.{Notifications, Pulse, Suggestions, Summaries}
 
   @periods [:day, :week, :month]
 
@@ -73,6 +73,7 @@ defmodule PulseWeb.DashboardLive do
 
     summaries = Summaries.list_summaries(user.id, from_date, to_date)
     suggestions = Suggestions.list_active_suggestions(user.id)
+    pulse = Pulse.daily(user.id)
 
     total_cost =
       Enum.reduce(summaries, Decimal.new(0), fn s, acc -> Decimal.add(acc, s.total_cost) end)
@@ -85,6 +86,7 @@ defmodule PulseWeb.DashboardLive do
     socket
     |> assign(:summaries, summaries)
     |> assign(:suggestions, suggestions)
+    |> assign(:pulse, pulse)
     |> assign(:total_cost, total_cost)
     |> assign(:total_kwh, total_kwh)
     |> assign(:chart_data, chart_data)
@@ -99,15 +101,33 @@ defmodule PulseWeb.DashboardLive do
     }
   end
 
+  defp pulse_status(nil),
+    do: {"No pulse yet", "Log energy use today to establish your baseline.", "slate"}
+
+  defp pulse_status(rate) do
+    value = Decimal.to_float(rate)
+
+    cond do
+      value < 0.18 ->
+        {"Light pulse", "Your current mix is relatively low-emission.", "emerald"}
+
+      value < 0.30 ->
+        {"Steady pulse", "Your current mix is moderate.", "amber"}
+
+      true ->
+        {"Heavy pulse", "Your current mix is carbon-intensive right now.", "rose"}
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-8">
-      <%# Header %>
-      <div class="flex items-center justify-between">
+      <%!-- Header --%>
+      <div class="flex items-start justify-between gap-4">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p class="text-gray-500 text-sm">Hi <%= @current_user.email %></p>
+          <p class="text-gray-500 text-sm">Hi {@current_user.email}</p>
         </div>
         <div class="flex gap-2">
           <button
@@ -120,12 +140,77 @@ defmodule PulseWeb.DashboardLive do
               @period != p && "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
             ]}
           >
-            <%= String.capitalize(to_string(p)) %>
+            {String.capitalize(to_string(p))}
           </button>
         </div>
       </div>
 
-      <%# Stats row %>
+      <% {pulse_title, pulse_blurb, pulse_tone} = pulse_status(@pulse.pulse_rate) %>
+      <div class={[
+        "overflow-hidden rounded-[2rem] border p-6 md:p-8 shadow-sm",
+        pulse_tone == "emerald" &&
+          "border-emerald-200 bg-gradient-to-br from-emerald-50 via-lime-50 to-white",
+        pulse_tone == "amber" &&
+          "border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-white",
+        pulse_tone == "rose" &&
+          "border-rose-200 bg-gradient-to-br from-rose-50 via-orange-50 to-white",
+        pulse_tone == "slate" &&
+          "border-slate-200 bg-gradient-to-br from-slate-50 via-cyan-50 to-white"
+      ]}>
+        <div class="grid gap-6 lg:grid-cols-[1.4fr_0.8fr] lg:items-end">
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
+                Daily Pulse
+              </span>
+              <span class="text-sm font-medium text-slate-500">Personal marginal emissions rate</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-500">{pulse_title}</p>
+              <div class="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
+                <p class="pulse-score text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                  <%= if @pulse.pulse_rate do %>
+                    {Decimal.round(@pulse.pulse_rate, 3)}
+                  <% else %>
+                    --
+                  <% end %>
+                </p>
+                <p class="pb-2 text-lg font-medium text-slate-500">kg CO2e / kWh</p>
+              </div>
+              <p class="mt-3 max-w-2xl text-base text-slate-600">
+                {pulse_blurb}
+              </p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Today's emissions
+              </p>
+              <p class="mt-2 text-2xl font-bold text-slate-900">
+                {Decimal.round(@pulse.emissions_kg, 2)} kg
+              </p>
+            </div>
+            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Tracked energy
+              </p>
+              <p class="mt-2 text-2xl font-bold text-slate-900">
+                {Decimal.round(@pulse.total_kwh, 1)} kWh
+              </p>
+            </div>
+            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Logs included
+              </p>
+              <p class="mt-2 text-2xl font-bold text-slate-900">{@pulse.logs_count}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Secondary stats --%>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
         <.stat_card
           label={"Total cost (#{@period})"}
@@ -142,7 +227,7 @@ defmodule PulseWeb.DashboardLive do
         />
       </div>
 
-      <%# Chart %>
+      <%!-- Chart --%>
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Energy cost over time</h2>
         <canvas
@@ -153,7 +238,7 @@ defmodule PulseWeb.DashboardLive do
         />
       </div>
 
-      <%# Suggestions %>
+      <%!-- Suggestions --%>
       <div :if={@suggestions != []}>
         <h2 class="text-lg font-semibold text-gray-900 mb-3">💡 Smart suggestions</h2>
         <div class="space-y-3">
@@ -161,7 +246,7 @@ defmodule PulseWeb.DashboardLive do
         </div>
       </div>
 
-      <%# Empty state %>
+      <%!-- Empty state --%>
       <div :if={@summaries == [] and @suggestions == []} class="text-center py-16 text-gray-400">
         <p class="text-4xl mb-4">📊</p>
         <p class="font-medium text-gray-600">No data yet</p>

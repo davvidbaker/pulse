@@ -3,6 +3,9 @@ name: Deploy to Fly.io
 on:
   push:
     branches: ["main"]
+    paths-ignore:
+      - "carbon/**"
+      - ".github/workflows/deploy-carbon.yml"
 
 # Only run one deploy at a time; cancel any in-progress run if a new push arrives
 concurrency:

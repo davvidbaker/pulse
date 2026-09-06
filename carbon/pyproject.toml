@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pulse-carbon"
+version = "0.1.0"
+description = "Daily US grid carbon intensity → Flambe observation"
+requires-python = ">=3.11"
+dependencies = [
+  "dagster>=1.9.0",
+  "dagster-webserver>=1.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.dagster]
+module_name = "pulse_carbon.definitions"
+code_location_name = "pulse_carbon"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

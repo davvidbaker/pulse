@@ -10,6 +10,7 @@ defmodule Pulse.Workers.CalculationWorker do
   """
 
   use Oban.Worker, queue: :calculations, max_attempts: 3
+  import Ecto.Query
 
   alias Pulse.{Logs, Summaries, Notifications, Gamification, Suggestions}
 
@@ -43,11 +44,8 @@ defmodule Pulse.Workers.CalculationWorker do
 
     recent_suggestion =
       Pulse.Suggestions.Suggestion
-      |> Ecto.Query.where(
-        [s],
-        s.user_id == ^user_id and s.generated_at >= ^six_hours_ago
-      )
-      |> Ecto.Query.limit(1)
+      |> where([s], s.user_id == ^user_id and s.generated_at >= ^six_hours_ago)
+      |> limit(1)
       |> Pulse.Repo.one()
 
     unless recent_suggestion do

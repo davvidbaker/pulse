@@ -28,6 +28,7 @@ defmodule Pulse.MixProject do
       # Core Phoenix
       {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.6"},
+      {:gettext, "~> 0.26"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:phoenix_live_view, "~> 1.0"},
@@ -51,6 +52,7 @@ defmodule Pulse.MixProject do
 
       # Email
       {:swoosh, "~> 1.17"},
+      {:hackney, "~> 1.20"},
       {:finch, "~> 0.19"},
 
       # Telemetry
@@ -73,6 +75,7 @@ defmodule Pulse.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_machina, "~> 2.8", only: :test},
       {:floki, ">= 0.36.0", only: :test},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:jason, "~> 1.4"},
       {:dns_cluster, "~> 0.1"},
       {:bandit, "~> 1.5"}

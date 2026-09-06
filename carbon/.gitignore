@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.dagster/
+.tmp_dagster_home_*/
+.env
+.DS_Store
+*.egg-info/
+dist/
+build/

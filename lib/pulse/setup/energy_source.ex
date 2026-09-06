@@ -32,7 +32,7 @@ defmodule Pulse.Setup.EnergySource do
   Changeset for creating or updating an energy source.
   The `metadata` map is validated based on `source_type`.
   """
-  def changeset(energy_source, attrs) do
+  def changeset(energy_source, attrs, opts \\ []) do
     energy_source
     |> cast(attrs, [:source_type, :name, :unit, :metadata, :active, :user_id])
     |> validate_required([:source_type, :name, :user_id])
@@ -40,7 +40,8 @@ defmodule Pulse.Setup.EnergySource do
       message: "must be one of: #{Enum.join(@source_types, ", ")}"
     )
     |> set_default_unit()
-    |> validate_metadata()
+    |> normalize_metadata()
+    |> validate_metadata(opts)
   end
 
   defp set_default_unit(changeset) do
@@ -53,15 +54,30 @@ defmodule Pulse.Setup.EnergySource do
     end
   end
 
-  defp validate_metadata(changeset) do
+  defp validate_metadata(changeset, opts) do
+    if Keyword.get(opts, :validate_metadata, true) == false do
+      changeset
+    else
+      source_type = get_field(changeset, :source_type)
+      metadata = get_field(changeset, :metadata) || %{}
+
+      if changeset.valid? && source_type do
+        case validate_metadata_for_type(source_type, metadata) do
+          :ok -> changeset
+          {:error, reason} -> add_error(changeset, :metadata, reason)
+        end
+      else
+        changeset
+      end
+    end
+  end
+
+  defp normalize_metadata(changeset) do
     source_type = get_field(changeset, :source_type)
     metadata = get_field(changeset, :metadata) || %{}
 
-    if changeset.valid? && source_type do
-      case validate_metadata_for_type(source_type, metadata) do
-        :ok -> changeset
-        {:error, reason} -> add_error(changeset, :metadata, reason)
-      end
+    if source_type && is_map(metadata) do
+      put_change(changeset, :metadata, normalize_metadata_for_type(source_type, metadata))
     else
       changeset
     end
@@ -144,6 +160,47 @@ defmodule Pulse.Setup.EnergySource do
   end
 
   defp validate_metadata_for_type(_type, _metadata), do: :ok
+
+  defp normalize_metadata_for_type("electricity", metadata) do
+    normalize_numeric_keys(metadata, ["tariff_kwh", "rated_kw"])
+  end
+
+  defp normalize_metadata_for_type("gas", metadata) do
+    normalize_numeric_keys(metadata, [
+      "cost_per_cubic_meter",
+      "rated_output_kw",
+      "calorific_value"
+    ])
+  end
+
+  defp normalize_metadata_for_type("fuel", metadata) do
+    normalize_numeric_keys(metadata, ["consumption_per_100km", "cost_per_liter"])
+  end
+
+  defp normalize_metadata_for_type("water", metadata) do
+    normalize_numeric_keys(metadata, ["cost_per_cubic_meter"])
+  end
+
+  defp normalize_metadata_for_type("heating", metadata) do
+    normalize_numeric_keys(metadata, ["rated_output_kw", "boiler_efficiency"])
+  end
+
+  defp normalize_metadata_for_type(_type, metadata), do: metadata
+
+  defp normalize_numeric_keys(metadata, keys) do
+    Enum.reduce(keys, metadata, fn key, acc ->
+      Map.update(acc, key, nil, &normalize_numeric_value/1)
+    end)
+  end
+
+  defp normalize_numeric_value(value) when is_binary(value) do
+    case Float.parse(value) do
+      {float, ""} -> float
+      _ -> value
+    end
+  end
+
+  defp normalize_numeric_value(value), do: value
 
   defp check_required_keys(metadata, required_keys) do
     missing = Enum.reject(required_keys, &Map.has_key?(metadata, &1))

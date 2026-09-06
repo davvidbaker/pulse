@@ -23,8 +23,7 @@ defmodule PulseWeb.UserLoginLive do
             <.input field={@form[:email]} type="email" label="Email" required />
             <.input field={@form[:password]} type="password" label="Password" required />
             <label class="flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" name="user[remember_me]" />
-              Keep me signed in
+              <input type="checkbox" name="user[remember_me]" /> Keep me signed in
             </label>
             <.button type="submit" variant={:primary} class="w-full">Sign in</.button>
           </.form>

@@ -44,9 +44,18 @@ defmodule PulseWeb.UserResetPasswordLive do
     <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div class="w-full max-w-sm">
         <h1 class="text-2xl font-bold text-gray-900 text-center mb-6">Set new password</h1>
-        <.form for={@form} phx-submit="save" class="space-y-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <.form
+          for={@form}
+          phx-submit="save"
+          class="space-y-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+        >
           <.input field={@form[:password]} type="password" label="New password" required />
-          <.input field={@form[:password_confirmation]} type="password" label="Confirm password" required />
+          <.input
+            field={@form[:password_confirmation]}
+            type="password"
+            label="Confirm password"
+            required
+          />
           <.button type="submit" variant={:primary} class="w-full">Reset password</.button>
         </.form>
       </div>

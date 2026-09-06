@@ -51,7 +51,7 @@ if config_env() == :prod do
     tls: :always,
     auth: :always
 
-  config :oban,
+  config :pulse, Oban,
     repo: Pulse.Repo,
     queues: [
       default: String.to_integer(System.get_env("OBAN_DEFAULT_CONCURRENCY") || "10"),

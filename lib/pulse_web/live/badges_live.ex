@@ -26,24 +26,26 @@ defmodule PulseWeb.BadgesLive do
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Badges</h1>
         <p class="text-gray-500 text-sm mt-1">
-          <%= MapSet.size(@earned_ids) %> / <%= length(@all_badges) %> earned
+          {MapSet.size(@earned_ids)} / {length(@all_badges)} earned
         </p>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <div :for={badge <- @all_badges}
-             class={[
-               "bg-white rounded-xl p-5 text-center shadow-sm border",
-               MapSet.member?(@earned_ids, badge.id) && "border-yellow-300 bg-yellow-50",
-               not MapSet.member?(@earned_ids, badge.id) && "border-gray-100 opacity-50 grayscale"
-             ]}>
-          <p class="text-4xl mb-2"><%= badge.icon || "🏅" %></p>
-          <p class="font-semibold text-gray-900 text-sm"><%= badge.name %></p>
-          <p class="text-xs text-gray-500 mt-1"><%= badge.description %></p>
+        <div
+          :for={badge <- @all_badges}
+          class={[
+            "bg-white rounded-xl p-5 text-center shadow-sm border",
+            MapSet.member?(@earned_ids, badge.id) && "border-yellow-300 bg-yellow-50",
+            not MapSet.member?(@earned_ids, badge.id) && "border-gray-100 opacity-50 grayscale"
+          ]}
+        >
+          <p class="text-4xl mb-2">{badge.icon || "🏅"}</p>
+          <p class="font-semibold text-gray-900 text-sm">{badge.name}</p>
+          <p class="text-xs text-gray-500 mt-1">{badge.description}</p>
           <%= if MapSet.member?(@earned_ids, badge.id) do %>
             <% user_badge = Enum.find(@user_badges, &(&1.badge_id == badge.id)) %>
             <p class="text-xs text-yellow-600 mt-2 font-medium">
-              Earned <%= Calendar.strftime(user_badge.awarded_at, "%b %d") %>
+              Earned {Calendar.strftime(user_badge.awarded_at, "%b %d")}
             </p>
           <% end %>
         </div>

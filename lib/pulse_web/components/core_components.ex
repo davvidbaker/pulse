@@ -34,7 +34,7 @@ defmodule PulseWeb.CoreComponents do
         @kind == :error && "bg-red-50 text-red-800 border border-red-200"
       ]}
     >
-      <%= msg %>
+      {msg}
     </div>
     """
   end
@@ -62,7 +62,7 @@ defmodule PulseWeb.CoreComponents do
             phx-window-keydown={@on_cancel}
             phx-key="escape"
           >
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </div>
         </div>
       </div>
@@ -93,11 +93,11 @@ defmodule PulseWeb.CoreComponents do
   def stat_card(assigns) do
     ~H"""
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <p class="text-sm text-gray-500 mb-1"><%= @label %></p>
+      <p class="text-sm text-gray-500 mb-1">{@label}</p>
       <p class="text-3xl font-bold text-gray-900">
-        <%= @value %><span class="text-base font-normal text-gray-500 ml-1"><%= @unit %></span>
+        {@value}<span class="text-base font-normal text-gray-500 ml-1"><%= @unit %></span>
       </p>
-      <p :if={@trend} class="text-xs text-gray-400 mt-1"><%= @trend %></p>
+      <p :if={@trend} class="text-xs text-gray-400 mt-1">{@trend}</p>
     </div>
     """
   end
@@ -110,11 +110,16 @@ defmodule PulseWeb.CoreComponents do
     ~H"""
     <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex justify-between items-start gap-4">
       <div>
-        <p class="font-medium text-amber-900 text-sm"><%= @suggestion.title %></p>
-        <p class="text-amber-700 text-sm mt-0.5"><%= @suggestion.body %></p>
-        <p :if={not is_nil(@suggestion.estimated_saving_weekly) and Decimal.gt?(@suggestion.estimated_saving_weekly, Decimal.new(0))}
-           class="text-xs text-amber-600 mt-1 font-medium">
-          Save ~$<%= Decimal.round(@suggestion.estimated_saving_weekly, 2) %>/week
+        <p class="font-medium text-amber-900 text-sm">{@suggestion.title}</p>
+        <p class="text-amber-700 text-sm mt-0.5">{@suggestion.body}</p>
+        <p
+          :if={
+            not is_nil(@suggestion.estimated_saving_weekly) and
+              Decimal.gt?(@suggestion.estimated_saving_weekly, Decimal.new(0))
+          }
+          class="text-xs text-amber-600 mt-1 font-medium"
+        >
+          Save ~${Decimal.round(@suggestion.estimated_saving_weekly, 2)}/week
         </p>
       </div>
       <button
@@ -142,7 +147,7 @@ defmodule PulseWeb.CoreComponents do
       @source_type == "water" && "bg-cyan-100 text-cyan-800",
       @source_type == "heating" && "bg-red-100 text-red-800"
     ]}>
-      <%= source_icon(@source_type) %> <%= String.capitalize(@source_type) %>
+      {source_icon(@source_type)} {String.capitalize(@source_type)}
     </span>
     """
   end
@@ -168,18 +173,20 @@ defmodule PulseWeb.CoreComponents do
       class={[
         "px-4 py-2 rounded-lg text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2",
         @variant == :primary && "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
-        @variant == :secondary && "border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400",
+        @variant == :secondary &&
+          "border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400",
         @variant == :danger && "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
         @class
       ]}
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
 
   @doc "Form input with label and error"
+  attr(:field, Phoenix.HTML.FormField, default: nil)
   attr(:id, :any, default: nil)
   attr(:name, :any)
   attr(:label, :string, default: nil)
@@ -190,10 +197,21 @@ defmodule PulseWeb.CoreComponents do
   slot(:inner_block)
 
   def input(assigns) do
+    assigns =
+      if assigns[:field] do
+        assigns
+        |> assign(:id, assigns.field.id)
+        |> assign(:name, assigns.field.name)
+        |> assign_new(:value, fn -> assigns.field.value end)
+        |> assign_new(:errors, fn -> Enum.map(assigns.field.errors, &translate_error/1) end)
+      else
+        assigns
+      end
+
     ~H"""
     <div>
       <label :if={@label} for={@id} class="block text-sm font-medium text-gray-700 mb-1">
-        <%= @label %>
+        {@label}
       </label>
       <input
         id={@id}
@@ -207,11 +225,12 @@ defmodule PulseWeb.CoreComponents do
         ]}
         {@rest}
       />
-      <p :for={error <- @errors} class="mt-1 text-xs text-red-600"><%= error %></p>
+      <p :for={error <- @errors} class="mt-1 text-xs text-red-600">{error}</p>
     </div>
     """
   end
 
+  attr(:field, Phoenix.HTML.FormField, default: nil)
   attr(:id, :any, default: nil)
   attr(:name, :any)
   attr(:label, :string, default: nil)
@@ -221,10 +240,21 @@ defmodule PulseWeb.CoreComponents do
   attr(:rest, :global)
 
   def select(assigns) do
+    assigns =
+      if assigns[:field] do
+        assigns
+        |> assign(:id, assigns.field.id)
+        |> assign(:name, assigns.field.name)
+        |> assign_new(:value, fn -> assigns.field.value end)
+        |> assign_new(:errors, fn -> Enum.map(assigns.field.errors, &translate_error/1) end)
+      else
+        assigns
+      end
+
     ~H"""
     <div>
       <label :if={@label} for={@id} class="block text-sm font-medium text-gray-700 mb-1">
-        <%= @label %>
+        {@label}
       </label>
       <select
         id={@id}
@@ -232,10 +262,15 @@ defmodule PulseWeb.CoreComponents do
         class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         {@rest}
       >
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
-      <p :for={error <- @errors} class="mt-1 text-xs text-red-600"><%= error %></p>
+      <p :for={error <- @errors} class="mt-1 text-xs text-red-600">{error}</p>
     </div>
     """
   end
+
+  defp translate_error({msg, opts}),
+    do: Gettext.dngettext(PulseWeb.Gettext, "errors", msg, msg, 1, opts)
+
+  defp translate_error(msg) when is_binary(msg), do: msg
 end

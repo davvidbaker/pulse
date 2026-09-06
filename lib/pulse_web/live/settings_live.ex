@@ -73,7 +73,7 @@ defmodule PulseWeb.SettingsLive do
     <div class="max-w-2xl space-y-8">
       <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
 
-      <%# Account settings %>
+      <%!-- Account settings --%>
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-gray-900 mb-4">Account</h2>
         <.form for={@settings_form} phx-submit="save_settings" class="space-y-4">
@@ -82,7 +82,7 @@ defmodule PulseWeb.SettingsLive do
         </.form>
       </div>
 
-      <%# Notification rules %>
+      <%!-- Notification rules --%>
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-gray-900 mb-4">Alert rules</h2>
 
@@ -90,19 +90,27 @@ defmodule PulseWeb.SettingsLive do
           <div :for={rule <- @rules} class="flex items-center justify-between py-3">
             <div>
               <p class="text-sm font-medium text-gray-900">
-                <%= rule.rule_type |> String.replace("_", " ") |> String.capitalize() %>
+                {rule.rule_type |> String.replace("_", " ") |> String.capitalize()}
               </p>
-              <p class="text-xs text-gray-500">Threshold: <%= rule.threshold_value %></p>
+              <p class="text-xs text-gray-500">Threshold: {rule.threshold_value}</p>
             </div>
             <div class="flex gap-3 items-center">
               <button
                 phx-click="toggle_rule"
                 phx-value-id={rule.id}
-                class={["text-xs px-2 py-1 rounded", rule.enabled && "bg-green-100 text-green-700", not rule.enabled && "bg-gray-100 text-gray-500"]}
+                class={[
+                  "text-xs px-2 py-1 rounded",
+                  rule.enabled && "bg-green-100 text-green-700",
+                  not rule.enabled && "bg-gray-100 text-gray-500"
+                ]}
               >
-                <%= if rule.enabled, do: "On", else: "Off" %>
+                {if rule.enabled, do: "On", else: "Off"}
               </button>
-              <button phx-click="delete_rule" phx-value-id={rule.id} class="text-xs text-red-400 hover:text-red-600">
+              <button
+                phx-click="delete_rule"
+                phx-value-id={rule.id}
+                class="text-xs text-red-400 hover:text-red-600"
+              >
                 Delete
               </button>
             </div>
@@ -120,7 +128,12 @@ defmodule PulseWeb.SettingsLive do
               "Daily kWh exceeds": "threshold_kwh"
             ]}
           />
-          <.input field={@rule_form[:threshold_value]} label="Threshold value ($)" type="number" step="0.01" />
+          <.input
+            field={@rule_form[:threshold_value]}
+            label="Threshold value ($)"
+            type="number"
+            step="0.01"
+          />
           <.button type="submit" variant={:secondary}>Add alert</.button>
         </.form>
       </div>

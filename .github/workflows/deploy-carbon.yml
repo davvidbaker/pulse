@@ -1,0 +1,28 @@
+name: Deploy carbon Dagster to Fly.io
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "carbon/**"
+      - ".github/workflows/deploy-carbon.yml"
+
+concurrency:
+  group: deploy-carbon
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy pulse-carbon
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: carbon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy Dagster OSS
+        run: flyctl deploy --remote-only --app pulse-carbon
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

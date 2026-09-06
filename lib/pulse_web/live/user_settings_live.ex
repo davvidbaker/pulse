@@ -69,19 +69,44 @@ defmodule PulseWeb.UserSettingsLive do
 
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-gray-900 mb-4">Change email</h2>
-        <.form for={@email_form} phx-change="validate_email" phx-submit="update_email" class="space-y-4">
+        <.form
+          for={@email_form}
+          phx-change="validate_email"
+          phx-submit="update_email"
+          class="space-y-4"
+        >
           <.input field={@email_form[:email]} type="email" label="New email" required />
-          <.input field={@email_form[:current_password]} type="password" label="Current password" required />
+          <.input
+            field={@email_form[:current_password]}
+            type="password"
+            label="Current password"
+            required
+          />
           <.button type="submit" variant={:primary}>Update email</.button>
         </.form>
       </div>
 
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-gray-900 mb-4">Change password</h2>
-        <.form for={@password_form} phx-change="validate_password" phx-submit="update_password" class="space-y-4">
-          <.input field={@password_form[:current_password]} type="password" label="Current password" required />
+        <.form
+          for={@password_form}
+          phx-change="validate_password"
+          phx-submit="update_password"
+          class="space-y-4"
+        >
+          <.input
+            field={@password_form[:current_password]}
+            type="password"
+            label="Current password"
+            required
+          />
           <.input field={@password_form[:password]} type="password" label="New password" required />
-          <.input field={@password_form[:password_confirmation]} type="password" label="Confirm new password" required />
+          <.input
+            field={@password_form[:password_confirmation]}
+            type="password"
+            label="Confirm new password"
+            required
+          />
           <.button type="submit" variant={:primary}>Update password</.button>
         </.form>
       </div>

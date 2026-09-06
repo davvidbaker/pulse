@@ -69,7 +69,9 @@ defmodule Pulse.Engine do
           avg_daily_cost: Decimal.t(),
           avg_daily_kwh: Decimal.t()
         }
-  def estimate_daily(computed_logs, days \\ 14) when length(computed_logs) > 0 do
+  def estimate_daily(computed_logs, days \\ 14)
+
+  def estimate_daily(computed_logs, days) when length(computed_logs) > 0 do
     total_cost =
       Enum.reduce(computed_logs, Decimal.new(0), fn log, acc ->
         Decimal.add(acc, log.computed_cost || Decimal.new(0))

@@ -57,9 +57,9 @@ defmodule Pulse.Setup do
     |> Repo.update()
   end
 
-  @spec change_energy_source(EnergySource.t(), map()) :: Ecto.Changeset.t()
-  def change_energy_source(%EnergySource{} = energy_source, attrs \\ %{}) do
-    EnergySource.changeset(energy_source, attrs)
+  @spec change_energy_source(EnergySource.t(), map(), keyword()) :: Ecto.Changeset.t()
+  def change_energy_source(%EnergySource{} = energy_source, attrs \\ %{}, opts \\ []) do
+    EnergySource.changeset(energy_source, attrs, opts)
   end
 
   @doc "Returns the tariff/rate metadata for a given source, suitable for the calculation engine."

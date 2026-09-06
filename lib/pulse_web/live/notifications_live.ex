@@ -33,12 +33,14 @@ defmodule PulseWeb.NotificationsLive do
       </div>
 
       <div class="space-y-2">
-        <div :for={n <- @notifications}
-             class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+        <div
+          :for={n <- @notifications}
+          class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm"
+        >
           <div class="flex justify-between items-start">
             <div>
-              <p class="font-medium text-gray-900 text-sm"><%= n.title %></p>
-              <p class="text-gray-600 text-sm mt-0.5"><%= n.body %></p>
+              <p class="font-medium text-gray-900 text-sm">{n.title}</p>
+              <p class="text-gray-600 text-sm mt-0.5">{n.body}</p>
             </div>
             <span class={[
               "text-xs px-2 py-0.5 rounded-full",
@@ -47,11 +49,11 @@ defmodule PulseWeb.NotificationsLive do
               n.type == "weekly_summary" && "bg-blue-100 text-blue-700",
               n.type == "suggestion" && "bg-green-100 text-green-700"
             ]}>
-              <%= n.type |> String.replace("_", " ") |> String.capitalize() %>
+              {n.type |> String.replace("_", " ") |> String.capitalize()}
             </span>
           </div>
           <p class="text-xs text-gray-400 mt-2">
-            <%= Calendar.strftime(n.inserted_at, "%b %d, %Y at %H:%M") %>
+            {Calendar.strftime(n.inserted_at, "%b %d, %Y at %H:%M")}
           </p>
         </div>
       </div>

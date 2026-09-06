@@ -1,4 +1,20 @@
+@font-face {
+  font-family: "code";
+  src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/339525/FiraCodeVariable-VF_copy_copy.ttf");
+}
+
 @import "tailwindcss";
+@source "../js";
+@source "../../lib/pulse_web";
+
+:root {
+  --dur: 1s;
+}
+
+html, body {
+  font-family: "code", monospace;
+  font-variation-settings: "SERF" 1000;
+}
 
 /* Custom component styles */
 [x-cloak] { display: none !important; }
@@ -9,3 +25,14 @@
   50% { opacity: 0.5; }
 }
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+@keyframes font-pulse {
+  to {
+    font-variation-settings: "SERF" 0;
+  }
+}
+
+.pulse-score {
+  font-variation-settings: "SERF" 1000;
+  animation: font-pulse var(--dur) infinite alternate ease-in-out;
+}

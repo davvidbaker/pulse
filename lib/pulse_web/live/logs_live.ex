@@ -84,7 +84,7 @@ defmodule PulseWeb.LogsLive do
       <h1 class="text-2xl font-bold text-gray-900">Log Usage</h1>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <%# Quick log form %>
+        <%!-- Quick log form --%>
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 class="font-semibold text-gray-800 mb-4">Quick log</h2>
@@ -100,21 +100,35 @@ defmodule PulseWeb.LogsLive do
                 <label class="block text-sm font-medium text-gray-700 mb-1">Input type</label>
                 <div class="flex gap-3">
                   <label class="flex items-center gap-1.5 text-sm">
-                    <input type="radio" name="usage_log[input_type]" value="duration"
-                      checked={Phoenix.HTML.Form.input_value(@form, :input_type) != "quantity"} />
-                    Duration
+                    <input
+                      type="radio"
+                      name="usage_log[input_type]"
+                      value="duration"
+                      checked={Phoenix.HTML.Form.input_value(@form, :input_type) != "quantity"}
+                    /> Duration
                   </label>
                   <label class="flex items-center gap-1.5 text-sm">
-                    <input type="radio" name="usage_log[input_type]" value="quantity" />
-                    Quantity
+                    <input type="radio" name="usage_log[input_type]" value="quantity" /> Quantity
                   </label>
                 </div>
               </div>
 
               <%= if Phoenix.HTML.Form.input_value(@form, :input_type) == "quantity" do %>
-                <.input field={@form[:quantity]} label="Quantity" type="number" step="0.01" placeholder="e.g. 0.5 m³" />
+                <.input
+                  field={@form[:quantity]}
+                  label="Quantity"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 0.5 m³"
+                />
               <% else %>
-                <.input field={@form[:duration_minutes]} label="Duration (minutes)" type="number" min="1" placeholder="e.g. 30" />
+                <.input
+                  field={@form[:duration_minutes]}
+                  label="Duration (minutes)"
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 30"
+                />
               <% end %>
 
               <.input field={@form[:logged_at]} label="When" type="datetime-local" />
@@ -125,7 +139,7 @@ defmodule PulseWeb.LogsLive do
           </div>
         </div>
 
-        <%# Logs list %>
+        <%!-- Logs list --%>
         <div class="lg:col-span-2">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="p-4 border-b border-gray-100">
@@ -143,24 +157,26 @@ defmodule PulseWeb.LogsLive do
                   <.source_badge source_type={log.energy_source && log.energy_source.source_type} />
                   <div>
                     <p class="text-sm font-medium text-gray-900">
-                      <%= log.energy_source && log.energy_source.name %>
+                      {log.energy_source && log.energy_source.name}
                     </p>
                     <p class="text-xs text-gray-400">
                       <%= if log.input_type == "duration" do %>
-                        <%= log.duration_minutes %> min
+                        {log.duration_minutes} min
                       <% else %>
-                        <%= log.quantity %> units
+                        {log.quantity} units
                       <% end %>
-                      · <%= Calendar.strftime(log.logged_at, "%b %d, %H:%M") %>
+                      · {Calendar.strftime(log.logged_at, "%b %d, %H:%M")}
                     </p>
-                    <p :if={log.notes} class="text-xs text-gray-400 italic"><%= log.notes %></p>
+                    <p :if={log.notes} class="text-xs text-gray-400 italic">{log.notes}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
                   <div class="text-right">
                     <%= if log.computed_cost do %>
-                      <p class="text-sm font-semibold text-gray-900">$<%= Decimal.round(log.computed_cost, 3) %></p>
-                      <p class="text-xs text-gray-400"><%= Decimal.round(log.computed_kwh, 3) %> kWh</p>
+                      <p class="text-sm font-semibold text-gray-900">
+                        ${Decimal.round(log.computed_cost, 3)}
+                      </p>
+                      <p class="text-xs text-gray-400">{Decimal.round(log.computed_kwh, 3)} kWh</p>
                     <% else %>
                       <p class="text-xs text-gray-400 animate-pulse">Calculating…</p>
                     <% end %>

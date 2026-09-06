@@ -1,0 +1,28 @@
+# Dagster OSS on Fly. Separate from the Phoenix `pulse` app.
+# The scheduler cannot auto-stop: keep one machine running.
+
+app = "pulse-carbon"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[mounts]
+  source = "dagster_data"
+  destination = "/data"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1

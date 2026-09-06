@@ -19,6 +19,7 @@ This file provides guidance for AI assistants (Claude, etc.) working in this rep
 | JS build | esbuild |
 | Email | Swoosh (local adapter in dev, SMTP in prod) |
 | Charts | Chart.js (via CDN + LiveView JS hook) |
+| Carbon jobs | Dagster OSS on Fly (`carbon/`, app `pulse-carbon`) |
 
 ## Repository Structure
 
@@ -102,7 +103,8 @@ pulse/
 │   └── pulse/engine/        # Unit tests for calculation engine
 ├── mix.exs
 ├── .formatter.exs
-└── .credo.exs
+├── .credo.exs
+└── carbon/                   # Dagster OSS: US grid intensity → Flambe observations (Fly app pulse-carbon)
 ```
 
 ## Domain Model
@@ -231,3 +233,4 @@ mix ecto.migrate            # Run pending migrations
 - LiveViews subscribe to PubSub in `mount/3` when `connected?(socket)` is true — don't subscribe unconditionally.
 - The `EnergyChart` LiveView hook receives data via `push_event/3` — always call `push_event("chart_data_updated", ...)` after updating summaries on the socket.
 - Update this file when: new contexts are added, new env vars are required, major architectural decisions are made, or new developer workflows are established.
+- Grid carbon intensity is collected by Dagster OSS in `carbon/`, deployed as Fly app `pulse-carbon` (always-on Machine, SQLite volume, nginx basic auth). It posts Flambe observations; user kgCO₂ / forecast error still belong in the Phoenix app.

@@ -35,6 +35,7 @@ defmodule PulseWeb.UserRegistrationLive do
          |> redirect(to: ~p"/login")}
 
       {:error, changeset} ->
+        changeset = Map.put(changeset, :action, :insert)
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
@@ -51,8 +52,16 @@ defmodule PulseWeb.UserRegistrationLive do
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <.form for={@form} phx-change="validate" phx-submit="save" class="space-y-4">
+            <p :if={@form.source.action == :insert} class="text-sm text-red-600">
+              Please fix the errors below and try again.
+            </p>
             <.input field={@form[:email]} type="email" label="Email" required />
-            <.input field={@form[:password]} type="password" label="Password (12+ characters)" required />
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="Password (12+ characters)"
+              required
+            />
             <.button type="submit" variant={:primary} class="w-full">Create account</.button>
           </.form>
         </div>

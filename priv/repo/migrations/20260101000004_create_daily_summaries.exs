@@ -14,6 +14,5 @@ defmodule Pulse.Repo.Migrations.CreateDailySummaries do
     end
 
     create unique_index(:daily_summaries, [:user_id, :date])
-    create index(:daily_summaries, [:user_id, :date])
   end
 end
