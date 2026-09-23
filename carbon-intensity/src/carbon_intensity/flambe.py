@@ -20,6 +20,7 @@ def post_observation(
     value: float,
     unit: str | None = None,
     observed_on: str | None = None,
+    timestamp: int | None = None,
     payload: dict[str, Any] | None = None,
     base_url: str | None = None,
     token: str | None = None,
@@ -33,7 +34,7 @@ def post_observation(
     body: dict[str, Any] = {
         "kind": kind,
         "value": value,
-        "timestamp_integer": int(time.time() * 1000),
+        "timestamp_integer": timestamp if timestamp is not None else int(time.time() * 1000),
     }
     if unit:
         body["unit"] = unit

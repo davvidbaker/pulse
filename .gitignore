@@ -9,5 +9,5 @@ erl_crash.dump
 /config/*.secret.exs
 .elixir_ls/
 /priv/static/assets/
-carbon/.venv/
-carbon/.env
+carbon-intensity/.venv/
+carbon-intensity/.env

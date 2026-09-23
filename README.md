@@ -74,6 +74,6 @@ mix phx.server
 
 ## Carbon (Dagster on Fly)
 
-US grid intensity collection lives in [`carbon/`](carbon/README.md). It is a
-separate always-on Fly app (`pulse-carbon`), not Dagster+ and not inside the
+US carbon intensity collection lives in [`carbon-intensity/`](carbon-intensity/README.md). It is a
+separate always-on Fly app (`carbon-intensity`), not Dagster+ and not inside the
 Phoenix Machine.

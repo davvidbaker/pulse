@@ -1,7 +1,7 @@
 # Dagster OSS on Fly. Separate from the Phoenix `pulse` app.
 # The scheduler cannot auto-stop: keep one machine running.
 
-app = "pulse-carbon"
+app = "carbon-intensity"
 primary_region = "lhr"
 
 [build]

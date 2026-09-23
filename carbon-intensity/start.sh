@@ -28,16 +28,16 @@ done
 
 dagster-daemon run &
 
-# Schedules stay STOPPED in the instance DB unless started. Keep the daily
-# carbon job on across restarts even if it was first loaded as stopped.
+# Schedules stay STOPPED in the instance DB unless started. Keep the hourly
+# carbon-intensity job on across restarts even if it was first loaded as stopped.
 (
   i=0
   while [ "$i" -lt 30 ]; do
-    if dagster schedule start daily_us_carbon_schedule >/tmp/pulse-carbon-schedule.log 2>&1; then
-      echo "started daily_us_carbon_schedule" >&2
+    if dagster schedule start carbon_intensity_schedule >/tmp/carbon-intensity-schedule.log 2>&1; then
+      echo "started carbon_intensity_schedule" >&2
       break
     fi
-    if grep -qiE 'already running|already started' /tmp/pulse-carbon-schedule.log; then
+    if grep -qiE 'already running|already started' /tmp/carbon-intensity-schedule.log; then
       break
     fi
     i=$((i + 1))

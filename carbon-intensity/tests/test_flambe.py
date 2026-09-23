@@ -1,6 +1,6 @@
 import json
 
-from pulse_carbon.flambe import post_observation
+from carbon_intensity.flambe import post_observation
 
 
 class FakeResponse:
@@ -44,3 +44,27 @@ def test_post_observation_hits_flambe_api():
     assert captured["body"]["observation"]["kind"] == "carbon"
     assert captured["body"]["observation"]["observed_on"] == "2026-09-03"
     assert captured["body"]["observation"]["payload"]["source"] == "us-ba-mean"
+
+
+def test_post_observation_omits_observed_on_and_uses_timestamp():
+    captured = {}
+
+    def opener(request, timeout=30):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse({"data": {"id": 7}})
+
+    post_observation(
+        kind="carbon",
+        value=312.4,
+        unit="gCO2eq/kWh",
+        timestamp=1_778_000_000_000,
+        payload={"hour_utc": "2026-09-03T12:00:00Z"},
+        base_url="http://localhost:4001/",
+        token="flb_test",
+        opener=opener,
+    )
+
+    observation = captured["body"]["observation"]
+    assert observation["timestamp_integer"] == 1_778_000_000_000
+    assert "observed_on" not in observation
+    assert observation["payload"]["hour_utc"] == "2026-09-03T12:00:00Z"

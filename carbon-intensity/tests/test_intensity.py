@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import datetime, timezone
 
 import pytest
 
-from pulse_carbon.intensity import USER_AGENT, fetch_ba_intensity, us_daily_mean
+from carbon_intensity.intensity import USER_AGENT, fetch_ba_intensity, us_hourly_mean
 
 
 def _payload(ba: str, intensities: list[float], day: str = "2026-09-03") -> dict:
@@ -22,30 +22,42 @@ def _payload(ba: str, intensities: list[float], day: str = "2026-09-03") -> dict
     }
 
 
-def test_us_daily_mean_is_unweighted_average_of_ba_day_means():
+def test_us_hourly_mean_is_unweighted_average_of_bas_for_that_hour():
     low = _payload("CISO", [0.1] * 24)
     high = _payload("PJM", [0.3] * 24)
-    result = us_daily_mean([low, high], observed_on=date(2026, 9, 3))
+    result = us_hourly_mean(
+        [low, high], hour_utc=datetime(2026, 9, 3, 12, tzinfo=timezone.utc)
+    )
 
-    assert result["observed_on"] == "2026-09-03"
+    assert result["hour_utc"] == "2026-09-03T12:00:00Z"
+    assert result["timestamp_ms"] == int(datetime(2026, 9, 3, 12, tzinfo=timezone.utc).timestamp() * 1000)
     assert result["mean_g_per_kwh"] == 200.0
     assert result["min_g_per_kwh"] == 100.0
     assert result["max_g_per_kwh"] == 300.0
     assert result["unit"] == "gCO2eq/kWh"
 
 
-def test_us_daily_mean_ignores_other_utc_days():
-    payload = _payload("CISO", [0.1] * 24, day="2026-09-03")
-    payload["hourly"].append(
-        {"hour_utc": "2026-09-04T00:00Z", "intensity_kg_co2e_per_kwh": 9.9}
+def test_us_hourly_mean_uses_that_hour_not_the_day_mean():
+    varying = _payload("CISO", [0.1] + [0.5] * 23)
+    result = us_hourly_mean(
+        [varying], hour_utc=datetime(2026, 9, 3, 0, tzinfo=timezone.utc)
     )
-    result = us_daily_mean([payload], observed_on=date(2026, 9, 3))
     assert result["mean_g_per_kwh"] == 100.0
 
 
-def test_us_daily_mean_requires_enough_hours():
-    with pytest.raises(ValueError, match="need at least"):
-        us_daily_mean([_payload("CISO", [0.1] * 4)], observed_on=date(2026, 9, 3))
+def test_us_hourly_mean_defaults_to_latest_hour_all_bas_share():
+    ciso = _payload("CISO", [0.1] * 24)
+    pjm = _payload("PJM", [0.3] * 23)
+    result = us_hourly_mean([ciso, pjm])
+    assert result["hour_utc"] == "2026-09-03T22:00:00Z"
+
+
+def test_us_hourly_mean_requires_the_hour_on_every_ba():
+    with pytest.raises(ValueError, match="missing intensity"):
+        us_hourly_mean(
+            [_payload("CISO", [0.1] * 24)],
+            hour_utc=datetime(2026, 9, 4, 0, tzinfo=timezone.utc),
+        )
 
 
 class _FakeResponse:
