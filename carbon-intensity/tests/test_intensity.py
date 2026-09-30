@@ -90,3 +90,31 @@ def test_fetch_ba_intensity_sends_user_agent():
     assert captured["url"].endswith("/api/intensity?ba=CISO&hours=24")
     assert captured["user_agent"] == USER_AGENT
     assert captured["accept"] == "application/json"
+
+
+def test_fetch_ba_intensity_retries_timeouts(monkeypatch):
+    attempts = {"count": 0}
+    sleeps = []
+
+    def opener(request, timeout=30):
+        attempts["count"] += 1
+        if attempts["count"] < 3:
+            raise TimeoutError("The read operation timed out")
+        return _FakeResponse(_payload("CISO", [0.1] * 24))
+
+    monkeypatch.setattr("carbon_intensity.intensity.time.sleep", sleeps.append)
+
+    payload = fetch_ba_intensity("CISO", hours=24, opener=opener)
+    assert payload["balancing_authority"] == "CISO"
+    assert attempts["count"] == 3
+    assert sleeps == [1.0, 2.0]
+
+
+def test_fetch_ba_intensity_raises_after_retries_exhausted(monkeypatch):
+    monkeypatch.setattr("carbon_intensity.intensity.time.sleep", lambda *_: None)
+
+    def opener(request, timeout=30):
+        raise TimeoutError("The read operation timed out")
+
+    with pytest.raises(RuntimeError, match="timed out fetching intensity for CISO"):
+        fetch_ba_intensity("CISO", hours=24, opener=opener)

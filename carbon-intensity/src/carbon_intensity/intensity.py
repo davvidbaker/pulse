@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import statistics
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -13,6 +14,9 @@ INTENSITY_URL = "https://emission-factors.com/api/intensity"
 BALANCING_AUTHORITIES = ("CISO", "ERCO", "PJM", "MISO", "NYIS")
 KG_TO_G = 1000.0
 USER_AGENT = "carbon-intensity/0.1 (+https://github.com/davvidbaker/pulse)"
+FETCH_TIMEOUT_SECONDS = 30
+FETCH_ATTEMPTS = 3
+FETCH_RETRY_BACKOFF_SECONDS = (1.0, 2.0)
 
 
 def fetch_ba_intensity(ba: str, hours: int = 72, opener=None) -> dict[str, Any]:
@@ -25,11 +29,23 @@ def fetch_ba_intensity(ba: str, hours: int = 72, opener=None) -> dict[str, Any]:
         },
     )
     reader = opener or urllib.request.urlopen
-    try:
-        with reader(request, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"HTTP {exc.code} {exc.reason} fetching intensity for {ba}") from exc
+    last_error: BaseException | None = None
+
+    for attempt in range(FETCH_ATTEMPTS):
+        try:
+            with reader(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"HTTP {exc.code} {exc.reason} fetching intensity for {ba}") from exc
+        except (TimeoutError, urllib.error.URLError, OSError) as exc:
+            last_error = exc
+            if attempt >= FETCH_ATTEMPTS - 1:
+                break
+            time.sleep(FETCH_RETRY_BACKOFF_SECONDS[min(attempt, len(FETCH_RETRY_BACKOFF_SECONDS) - 1)])
+
+    raise RuntimeError(
+        f"timed out fetching intensity for {ba} after {FETCH_ATTEMPTS} attempts"
+    ) from last_error
 
 
 def parse_hour_utc(hour_utc: str) -> datetime:
