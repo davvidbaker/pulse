@@ -7,6 +7,7 @@ import statistics
 import time
 import urllib.error
 import urllib.request
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,6 +18,8 @@ USER_AGENT = "carbon-intensity/0.1 (+https://github.com/davvidbaker/pulse)"
 FETCH_TIMEOUT_SECONDS = 30
 FETCH_ATTEMPTS = 3
 FETCH_RETRY_BACKOFF_SECONDS = (1.0, 2.0)
+# EIA BA feeds lag unevenly; requiring every BA stuck the mean on an old shared hour.
+MIN_BAS_FOR_HOUR = 3
 
 
 def fetch_ba_intensity(ba: str, hours: int = 72, opener=None) -> dict[str, Any]:
@@ -75,36 +78,57 @@ def intensity_by_hour(payload: dict[str, Any]) -> dict[datetime, float]:
     return by_hour
 
 
-def latest_complete_hour(payloads: list[dict[str, Any]]) -> datetime:
+def latest_hour_with_coverage(
+    payloads: list[dict[str, Any]], min_bas: int | None = None
+) -> datetime:
+    """Latest UTC hour present on at least ``min_bas`` balancing authorities."""
     if not payloads:
         raise ValueError("no intensity payloads")
-    common: set[datetime] | None = None
+    if min_bas is None:
+        min_bas = min(MIN_BAS_FOR_HOUR, len(payloads))
+    if min_bas < 1:
+        raise ValueError("min_bas must be >= 1")
+
+    counts: dict[datetime, int] = defaultdict(int)
     for payload in payloads:
-        hours = set(intensity_by_hour(payload))
-        common = hours if common is None else common & hours
-    if not common:
-        raise ValueError("no UTC hour has coverage across all balancing authorities")
-    return max(common)
+        for hour in intensity_by_hour(payload):
+            counts[hour] += 1
+
+    eligible = [hour for hour, count in counts.items() if count >= min_bas]
+    if not eligible:
+        raise ValueError(
+            f"no UTC hour has intensity for at least {min_bas} balancing authorities"
+        )
+    return max(eligible)
 
 
 def us_hourly_mean(
-    payloads: list[dict[str, Any]], hour_utc: datetime | None = None
+    payloads: list[dict[str, Any]],
+    hour_utc: datetime | None = None,
+    min_bas: int | None = None,
 ) -> dict[str, Any]:
     if not payloads:
         raise ValueError("no intensity payloads")
-    hour_utc = coerce_utc_hour(hour_utc or latest_complete_hour(payloads))
+    if min_bas is None:
+        min_bas = min(MIN_BAS_FOR_HOUR, len(payloads))
+
+    hour_utc = coerce_utc_hour(hour_utc or latest_hour_with_coverage(payloads, min_bas=min_bas))
     per_ba = []
     for payload in payloads:
         by_hour = intensity_by_hour(payload)
         ba = payload.get("balancing_authority") or "unknown"
         if hour_utc not in by_hour:
-            raise ValueError(f"{ba} is missing intensity for {format_hour_utc(hour_utc)}")
+            continue
         per_ba.append(
             {
                 "ba": ba,
                 "ba_name": payload.get("ba_name"),
                 "g_per_kwh": round(by_hour[hour_utc], 1),
             }
+        )
+    if len(per_ba) < min_bas:
+        raise ValueError(
+            f"need at least {min_bas} BAs for {format_hour_utc(hour_utc)}, got {len(per_ba)}"
         )
     means = [row["g_per_kwh"] for row in per_ba]
     return {
@@ -114,6 +138,7 @@ def us_hourly_mean(
         "mean_g_per_kwh": round(statistics.fmean(means), 1),
         "min_g_per_kwh": round(min(means), 1),
         "max_g_per_kwh": round(max(means), 1),
+        "ba_count": len(per_ba),
         "balancing_authorities": per_ba,
         "source": "emission-factors.com",
         "methodology": payloads[0].get("methodology"),

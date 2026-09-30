@@ -11,11 +11,13 @@ the UI can boot without nginx 502s.
 
 1. `us_grid_intensity` — hourly intensity from emission-factors.com for CISO,
    ERCO, PJM, MISO, NYIS (EIA-930, ~24h lag).
-2. Unweighted mean of those BAs for the latest UTC hour they all share, in
-   **gCO₂eq/kWh**.
+2. Unweighted mean of BAs that have the latest UTC hour with coverage from at
+   least 3 authorities, in **gCO₂eq/kWh**. (Requiring all five stuck the job
+   on lagging BAs such as PJM/NYIS.)
 3. `flambe_observation` — `POST /api/observations` (same contract as
    `flambe observe carbon … --at <hour>`). Omits `observed_on` so each hour
-   inserts instead of upserting a daily row.
+   inserts instead of upserting a daily row. Skips re-posting an hour already
+   written to `/data/dagster/last_carbon_hour_utc`.
 
 ## Local
 
