@@ -2,7 +2,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from carbon_intensity.intensity import USER_AGENT, fetch_ba_intensity, us_hourly_mean
+from carbon_intensity.intensity import (
+    USER_AGENT,
+    fetch_ba_intensity,
+    latest_hour_with_coverage,
+    us_hourly_mean,
+)
 
 
 def _payload(ba: str, intensities: list[float], day: str = "2026-09-03") -> dict:
@@ -22,6 +27,18 @@ def _payload(ba: str, intensities: list[float], day: str = "2026-09-03") -> dict
     }
 
 
+def _payload_hours(ba: str, hours: dict[str, float]) -> dict:
+    return {
+        "balancing_authority": ba,
+        "ba_name": ba,
+        "methodology": "test",
+        "hourly": [
+            {"hour_utc": hour, "intensity_kg_co2e_per_kwh": value}
+            for hour, value in hours.items()
+        ],
+    }
+
+
 def test_us_hourly_mean_is_unweighted_average_of_bas_for_that_hour():
     low = _payload("CISO", [0.1] * 24)
     high = _payload("PJM", [0.3] * 24)
@@ -34,6 +51,7 @@ def test_us_hourly_mean_is_unweighted_average_of_bas_for_that_hour():
     assert result["mean_g_per_kwh"] == 200.0
     assert result["min_g_per_kwh"] == 100.0
     assert result["max_g_per_kwh"] == 300.0
+    assert result["ba_count"] == 2
     assert result["unit"] == "gCO2eq/kWh"
 
 
@@ -45,15 +63,45 @@ def test_us_hourly_mean_uses_that_hour_not_the_day_mean():
     assert result["mean_g_per_kwh"] == 100.0
 
 
-def test_us_hourly_mean_defaults_to_latest_hour_all_bas_share():
+def test_us_hourly_mean_defaults_to_latest_hour_meeting_min_coverage():
     ciso = _payload("CISO", [0.1] * 24)
     pjm = _payload("PJM", [0.3] * 23)
     result = us_hourly_mean([ciso, pjm])
     assert result["hour_utc"] == "2026-09-03T22:00:00Z"
+    assert result["ba_count"] == 2
 
 
-def test_us_hourly_mean_requires_the_hour_on_every_ba():
-    with pytest.raises(ValueError, match="missing intensity"):
+def test_latest_hour_with_coverage_advances_past_lagging_bas():
+    ciso = _payload_hours(
+        "CISO",
+        {
+            "2026-09-29T03:00Z": 0.3,
+            "2026-09-29T04:00Z": 0.31,
+            "2026-09-29T06:00Z": 0.32,
+        },
+    )
+    erco = _payload_hours(
+        "ERCO",
+        {"2026-09-29T03:00Z": 0.4, "2026-09-29T04:00Z": 0.41},
+    )
+    miso = _payload_hours(
+        "MISO",
+        {"2026-09-29T03:00Z": 0.45, "2026-09-29T04:00Z": 0.46},
+    )
+    pjm = _payload_hours("PJM", {"2026-09-29T03:00Z": 0.35})
+    nyis = _payload_hours("NYIS", {"2026-09-29T03:00Z": 0.25})
+
+    hour = latest_hour_with_coverage([ciso, erco, miso, pjm, nyis], min_bas=3)
+    assert hour == datetime(2026, 9, 29, 4, tzinfo=timezone.utc)
+
+    result = us_hourly_mean([ciso, erco, miso, pjm, nyis], min_bas=3)
+    assert result["hour_utc"] == "2026-09-29T04:00:00Z"
+    assert result["ba_count"] == 3
+    assert {row["ba"] for row in result["balancing_authorities"]} == {"CISO", "ERCO", "MISO"}
+
+
+def test_us_hourly_mean_requires_enough_bas_for_requested_hour():
+    with pytest.raises(ValueError, match="need at least"):
         us_hourly_mean(
             [_payload("CISO", [0.1] * 24)],
             hour_utc=datetime(2026, 9, 4, 0, tzinfo=timezone.utc),
