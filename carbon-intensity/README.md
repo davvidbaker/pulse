@@ -7,17 +7,36 @@ This is a **separate Fly app** from Phoenix Pulse. The Machine stays up
 (`min_machines_running = 1`, **1 GB**) so the hourly schedule can fire and
 the UI can boot without nginx 502s.
 
-## Pipeline
+## Pipelines
+
+### Carbon intensity
 
 1. `us_grid_intensity` — hourly intensity from emission-factors.com for CISO,
    ERCO, PJM, MISO, NYIS (EIA-930, ~24h lag).
 2. Unweighted mean of BAs that have the latest UTC hour with coverage from at
-   least 3 authorities, in **gCO₂eq/kWh**. (Requiring all five stuck the job
-   on lagging BAs such as PJM/NYIS.)
+   least 3 authorities, in **gCO₂eq/kWh**. The payload also retains the actual
+   per-BA values in `ba_g_per_kwh`; Flambé renders those as sibling traces.
 3. `flambe_observation` — `POST /api/observations` (same contract as
    `flambe observe carbon … --at <hour>`). Omits `observed_on` so each hour
    inserts instead of upserting a daily row. Skips re-posting an hour already
    written to `/data/dagster/last_carbon_hour_utc`.
+
+### Grid market data
+
+A second hourly Dagster job runs at minute 5 and posts two multi-series
+observations. Each observation stores a scalar mean for API compatibility plus
+the actual named traces in `payload.series`.
+
+- `generation` — hourly mean total generation MW for CAISO, MISO, ERCOT and
+  NYISO, calculated from their public fuel-mix feeds via `gridstatus`.
+  Imports are excluded.
+- `hub_price` — day-ahead hourly prices for representative CAISO
+  (NP15/SP15/ZP26), MISO (Illinois/Michigan/Texas) and ERCOT
+  (North/Houston/South/West) trading hubs.
+
+Individual ISO failures are recorded in the payload and do not suppress the
+other available sources. Duplicate hours are skipped using
+`/data/dagster/last_<kind>_hour_utc`.
 
 ## Local
 
@@ -47,8 +66,9 @@ fly secrets set \
 fly deploy --app carbon-intensity
 ```
 
-`carbon_intensity_schedule` starts as **running** (every hour, UTC). Boot also
-calls `dagster schedule start` so a volume that first loaded it as stopped
+`carbon_intensity_schedule` starts as **running** on the hour UTC and
+`grid_market_data_schedule` starts as **running** at minute 5. Boot also calls
+`dagster schedule start` so a volume that first loaded a schedule as stopped
 still ticks.
 
 UI: `https://carbon-intensity.fly.dev` (HTTP basic auth).
