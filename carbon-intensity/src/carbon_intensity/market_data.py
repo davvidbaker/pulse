@@ -117,8 +117,8 @@ def _latest_hour_with_sources(
     return max(eligible)
 
 
-def _fetch_price_frames() -> dict[str, pd.DataFrame | BaseException]:
-    frames: dict[str, pd.DataFrame | BaseException] = {}
+def _fetch_price_frames() -> dict[str, pd.DataFrame | Exception]:
+    frames: dict[str, pd.DataFrame | Exception] = {}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         fetches = {
@@ -143,7 +143,7 @@ def _fetch_price_frames() -> dict[str, pd.DataFrame | BaseException]:
         for source, fetch in fetches.items():
             try:
                 frames[source] = fetch()
-            except BaseException as exc:
+            except Exception as exc:
                 frames[source] = exc
     return frames
 
@@ -151,7 +151,7 @@ def _fetch_price_frames() -> dict[str, pd.DataFrame | BaseException]:
 def collect_hourly_hub_prices(
     *,
     now: datetime | None = None,
-    fetcher: Callable[[], dict[str, pd.DataFrame | BaseException]] | None = None,
+    fetcher: Callable[[], dict[str, pd.DataFrame | Exception]] | None = None,
 ) -> dict[str, Any]:
     """Representative day-ahead hub prices for the latest well-covered UTC hour."""
     now = now or datetime.now(timezone.utc)
@@ -160,7 +160,7 @@ def collect_hourly_hub_prices(
     per_source: dict[str, dict[datetime, dict[str, float]]] = {}
     errors: dict[str, str] = {}
     for source, frame in frames.items():
-        if isinstance(frame, BaseException):
+        if isinstance(frame, Exception):
             errors[source] = str(frame)
             continue
         try:
@@ -204,8 +204,8 @@ def collect_hourly_hub_prices(
     }
 
 
-def _fetch_generation_frames() -> dict[str, pd.DataFrame | BaseException]:
-    frames: dict[str, pd.DataFrame | BaseException] = {}
+def _fetch_generation_frames() -> dict[str, pd.DataFrame | Exception]:
+    frames: dict[str, pd.DataFrame | Exception] = {}
     fetches = {
         "CAISO": lambda: CAISO().get_fuel_mix("today"),
         "MISO": lambda: MISO().get_fuel_mix("today"),
@@ -215,7 +215,7 @@ def _fetch_generation_frames() -> dict[str, pd.DataFrame | BaseException]:
     for source, fetch in fetches.items():
         try:
             frames[source] = fetch()
-        except BaseException as exc:
+        except Exception as exc:
             frames[source] = exc
     return frames
 
@@ -223,7 +223,7 @@ def _fetch_generation_frames() -> dict[str, pd.DataFrame | BaseException]:
 def collect_hourly_generation(
     *,
     now: datetime | None = None,
-    fetcher: Callable[[], dict[str, pd.DataFrame | BaseException]] | None = None,
+    fetcher: Callable[[], dict[str, pd.DataFrame | Exception]] | None = None,
 ) -> dict[str, Any]:
     """Mean total generation MW within the latest well-covered UTC hour."""
     now = now or datetime.now(timezone.utc)
@@ -232,7 +232,7 @@ def collect_hourly_generation(
     per_source: dict[str, dict[datetime, float]] = {}
     errors: dict[str, str] = {}
     for source, frame in frames.items():
-        if isinstance(frame, BaseException):
+        if isinstance(frame, Exception):
             errors[source] = str(frame)
             continue
         try:
