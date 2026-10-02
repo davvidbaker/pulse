@@ -28,22 +28,25 @@ done
 
 dagster-daemon run &
 
-# Schedules stay STOPPED in the instance DB unless started. Keep the hourly
-# carbon-intensity job on across restarts even if it was first loaded as stopped.
-(
-  i=0
-  while [ "$i" -lt 30 ]; do
-    if dagster schedule start carbon_intensity_schedule >/tmp/carbon-intensity-schedule.log 2>&1; then
-      echo "started carbon_intensity_schedule" >&2
-      break
-    fi
-    if grep -qiE 'already running|already started' /tmp/carbon-intensity-schedule.log; then
-      break
-    fi
-    i=$((i + 1))
-    sleep 2
-  done
-) &
+# Schedules stay STOPPED in the instance DB unless started. Keep both hourly
+# grid jobs on across restarts even if the volume first loaded them as stopped.
+for schedule in carbon_intensity_schedule grid_market_data_schedule; do
+  (
+    i=0
+    log="/tmp/$schedule.log"
+    while [ "$i" -lt 30 ]; do
+      if dagster schedule start "$schedule" >"$log" 2>&1; then
+        echo "started $schedule" >&2
+        break
+      fi
+      if grep -qiE 'already running|already started' "$log"; then
+        break
+      fi
+      i=$((i + 1))
+      sleep 2
+    done
+  ) &
+done
 
 nginx
 wait "$web_pid"
