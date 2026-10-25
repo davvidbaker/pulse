@@ -13,6 +13,8 @@ defmodule PulseWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
   )
 
+  plug(PulseWeb.Plugs.CanonicalHost)
+
   plug(Plug.Static,
     at: "/",
     from: :pulse,

@@ -9,7 +9,8 @@ primary_region = "lhr"  # London — change to your preferred region
 
 [env]
   PORT = "8080"
-  PHX_HOST = "pulse-david-baker.fly.dev"
+  PHX_HOST = "pulse.brainsand.space"
+  PULSE_LEGACY_HOST = "pulse-david-baker.fly.dev"
   ECTO_IPV6 = "true"
 
 [http_service]
