@@ -89,7 +89,12 @@ jobs:
         run: pip install -e '.[dev]'
 
       - name: Validate Dagster definitions
-        run: dg check defs
+        env:
+          DAGSTER_HOME: ${{ runner.temp }}/pulse-dagster
+        run: |
+          mkdir -p "$DAGSTER_HOME"
+          printf 'telemetry:\n  enabled: false\n' > "$DAGSTER_HOME/dagster.yaml"
+          dg check defs
 
       - name: Run tests
         run: pytest

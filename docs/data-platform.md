@@ -81,6 +81,9 @@ Accepted categories are home electricity, home heating, ground travel, food, rem
 cd carbon-intensity
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
+export DAGSTER_HOME="$(pwd)/.dagster-local"
+mkdir -p "$DAGSTER_HOME"
+printf 'telemetry:\n  enabled: false\n' > "$DAGSTER_HOME/dagster.yaml"
 .venv/bin/dg check defs
 .venv/bin/pytest
 ```
