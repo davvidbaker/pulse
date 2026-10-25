@@ -25,6 +25,8 @@ Dates are partition labels; Pulse applies the user's timezone to each date. The 
 
 The deployed `QueuedRunCoordinator` serializes all runs. Keep that behavior while Flambe has no conditional revision-write API. A publisher reads the current stored revision, rejects dirty results, skips acknowledged metrics, and retries unacknowledged metrics. Dated Flambe upserts make failed acknowledgments safe to retry. Pulse calculation succeeds while publishing is disabled or Flambe is unavailable.
 
+Dagster runs on one VM with local workers and a persistent SQLite volume. Startup marks active runs from before the VM boot as interrupted, freeing their queue slots; queued work and workers started since boot are preserved. This recovery assumes one VM owns the instance storage. Revisit it before moving to shared storage or remote workers.
+
 ## Service configuration
 
 Phoenix requires its production database and endpoint settings. SMTP is optional: configure both `SMTP_USERNAME` and `SMTP_PASSWORD` to enable email. Without them, email delivery returns an explicit error; registration and password login remain available. Password reset emails require SMTP. Add these **secrets**, never committed values:
