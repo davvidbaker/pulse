@@ -38,13 +38,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-# Copy assets and compile them
+# Tailwind scans the Phoenix source for class names during asset compilation.
+COPY lib lib
 COPY priv priv
 COPY assets assets
 RUN mix assets.deploy
-
-# Copy application source
-COPY lib lib
 
 # Compile application
 RUN mix compile
