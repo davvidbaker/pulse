@@ -3,7 +3,7 @@
 
 ARG ELIXIR_VERSION=1.17.3
 ARG OTP_VERSION=27.1.2
-ARG DEBIAN_VERSION=bookworm-20240904-slim
+ARG DEBIAN_VERSION=bookworm-20260610-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -53,7 +53,7 @@ RUN mix compile
 COPY config/runtime.exs config/
 
 # Build release
-COPY rel rel 2>/dev/null || true
+COPY rel rel
 RUN mix release
 
 # ---- Runtime stage ----

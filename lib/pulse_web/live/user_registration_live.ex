@@ -23,15 +23,21 @@ defmodule PulseWeb.UserRegistrationLive do
   def handle_event("save", %{"user" => params}, socket) do
     case Accounts.register_user(params) do
       {:ok, user} ->
-        {:ok, _} =
+        delivery =
           Accounts.deliver_user_confirmation_instructions(
             user,
             &url(~p"/confirm-email/#{&1}")
           )
 
+        message =
+          case delivery do
+            {:ok, _} -> "Account created! Check your email to confirm."
+            {:error, _} -> "Account created. Email delivery is unavailable; you can sign in."
+          end
+
         {:noreply,
          socket
-         |> put_flash(:info, "Account created! Check your email to confirm.")
+         |> put_flash(:info, message)
          |> redirect(to: ~p"/login")}
 
       {:error, changeset} ->

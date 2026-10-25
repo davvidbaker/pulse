@@ -2,14 +2,15 @@
 # Run `fly launch` to create the app and attach a Postgres database,
 # or use `fly deploy` if the app already exists.
 
-app = "pulse"
+app = "pulse-david-baker"
 primary_region = "lhr"  # London — change to your preferred region
 
 [build]
 
 [env]
   PORT = "8080"
-  PHX_HOST = "pulse.fly.dev"  # Update after fly launch assigns your hostname
+  PHX_HOST = "pulse-david-baker.fly.dev"
+  ECTO_IPV6 = "true"
 
 [http_service]
   internal_port = 8080

@@ -27,7 +27,7 @@ The deployed `QueuedRunCoordinator` serializes all runs. Keep that behavior whil
 
 ## Service configuration
 
-Phoenix requires its existing production database, endpoint and SMTP settings. Add these **secrets**, never committed values:
+Phoenix requires its production database and endpoint settings. SMTP is optional: configure both `SMTP_USERNAME` and `SMTP_PASSWORD` to enable email. Without them, email delivery returns an explicit error; registration and password login remain available. Password reset emails require SMTP. Add these **secrets**, never committed values:
 
 | Phoenix | Meaning |
 | --- | --- |
@@ -92,4 +92,4 @@ For Phoenix, run `mix format --check-formatted`, `MIX_ENV=test mix compile --war
 
 Activation order: provision or identify the Phoenix app/database; configure its existing production environment; deploy and migrate; register/select the intended Pulse account; bind the service token/user ID; configure Dagster's Pulse origin/token; run one day with publishing disabled and review the stored result; confirm the Flambe credential identity; enable publishing and verify the five dated observations and their receipts. Never create personal baseline observations from test fixtures.
 
-Deployment investigation on October 24, 2026 found no app named `pulse` in the connected Fly account. The existing Dagster app is reachable, but the new personal pipeline has not been activated. A new backend/database target and user binding are needed before a live personal score can be sent.
+The production Phoenix target is `pulse-david-baker` (`https://pulse-david-baker.fly.dev`), with a dedicated `pulse-postgres` database in the personal Fly organization. The name `pulse` was unavailable. The maintained Dagster deployment is `carbon-intensity`. Deployment credentials must be authorized for the corresponding app; CI uses `PULSE_FLY_API_TOKEN` for Phoenix and the existing `FLY_API_TOKEN` for Dagster.

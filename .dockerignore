@@ -21,5 +21,8 @@
 # Ignore node_modules if present
 /assets/node_modules
 
+# Dagster has its own image and runtime dependencies
+/carbon-intensity
+
 # Ignore OS files
 .DS_Store

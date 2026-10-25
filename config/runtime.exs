@@ -41,19 +41,18 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  smtp_relay = System.get_env("SMTP_RELAY") || "smtp.sendgrid.net"
-  smtp_username = System.get_env("SMTP_USERNAME") || raise "SMTP_USERNAME missing"
-  smtp_password = System.get_env("SMTP_PASSWORD") || raise "SMTP_PASSWORD missing"
-  smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
-
-  config :pulse, Pulse.Mailer,
-    adapter: Swoosh.Adapters.SMTP,
-    relay: smtp_relay,
-    username: smtp_username,
-    password: smtp_password,
-    port: smtp_port,
-    tls: :always,
-    auth: :always
+  if System.get_env("SMTP_USERNAME") && System.get_env("SMTP_PASSWORD") do
+    config :pulse, Pulse.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: System.get_env("SMTP_RELAY") || "smtp.sendgrid.net",
+      username: System.get_env("SMTP_USERNAME"),
+      password: System.get_env("SMTP_PASSWORD"),
+      port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+      tls: :always,
+      auth: :always
+  else
+    config :pulse, Pulse.Mailer, adapter: Pulse.Mailer.Unconfigured
+  end
 
   config :pulse, Oban,
     repo: Pulse.Repo,
