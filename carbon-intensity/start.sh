@@ -9,6 +9,10 @@ fi
 mkdir -p /data/dagster/artifacts /data/dagster/compute_logs "${DAGSTER_HOME:-/opt/dagster/home}/logs"
 htpasswd -bc /etc/nginx/.htpasswd "$DAGSTER_BASIC_AUTH_USER" "$DAGSTER_BASIC_AUTH_PASSWORD"
 
+# DefaultRunLauncher workers live inside this one VM. A reboot loses them,
+# while their persisted STARTED records would otherwise hold queue slots forever.
+python3 -m carbon_intensity.recovery
+
 dagster-webserver -h 127.0.0.1 -p 3000 &
 web_pid=$!
 
