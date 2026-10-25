@@ -27,6 +27,8 @@ The deployed `QueuedRunCoordinator` serializes all runs. Keep that behavior whil
 
 Dagster runs on one VM with local workers and a persistent SQLite volume. Startup marks active runs from before the VM boot as interrupted, freeing their queue slots; queued work and workers started since boot are preserved. This recovery assumes one VM owns the instance storage. Revisit it before moving to shared storage or remote workers.
 
+Pulse jobs use one process per run for their small sequential API/model steps, avoiding Python startup for every asset. The runtime has two shared CPUs and 2 GB RAM for the webserver, daemon, code location and active worker.
+
 ## Service configuration
 
 Phoenix requires its production database and endpoint settings. SMTP is optional: configure both `SMTP_USERNAME` and `SMTP_PASSWORD` to enable email. Without them, email delivery returns an explicit error; registration and password login remain available. Password reset emails require SMTP. Add these **secrets**, never committed values:
