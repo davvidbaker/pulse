@@ -4,9 +4,7 @@ import "phoenix_html"
 import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
-
-// Import Chart.js (loaded from CDN via script tag in root.html.heex)
-// or: import Chart from "chart.js/auto"
+import Chart from "chart.js/auto"
 
 // LiveView Hooks
 const Hooks = {}

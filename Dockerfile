@@ -33,7 +33,7 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-# Install Node.js for assets (esbuild/tailwind download their own binaries but npm is needed for topbar)
+# Install Node.js for npm-managed asset dependencies.
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -f /var/lib/apt/lists/*_*
@@ -42,6 +42,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 COPY lib lib
 COPY priv priv
 COPY assets assets
+RUN npm ci --prefix assets --ignore-scripts
 RUN mix assets.deploy
 
 # Compile application
