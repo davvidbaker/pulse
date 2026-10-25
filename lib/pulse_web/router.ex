@@ -17,6 +17,21 @@ defmodule PulseWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :platform do
+    plug(:accepts, ["json"])
+    plug(PulseWeb.PlatformAuth)
+  end
+
+  scope "/api/platform", PulseWeb do
+    pipe_through(:platform)
+    get("/work", PlatformController, :work)
+    get("/inputs/:date", PlatformController, :inputs)
+    get("/results/:date", PlatformController, :result)
+    put("/results/:date", PlatformController, :save_result)
+    post("/results/:date/receipts", PlatformController, :receipt)
+    post("/observations", PlatformController, :observe)
+  end
+
   # Public routes
   scope "/", PulseWeb do
     pipe_through(:browser)
@@ -46,6 +61,7 @@ defmodule PulseWeb.Router do
     live_session :require_authenticated_user,
       on_mount: [{PulseWeb.UserAuth, :ensure_authenticated}] do
       live("/dashboard", DashboardLive, :index)
+      live("/footprint", FootprintLive, :index)
       live("/setup", SetupLive, :index)
       live("/setup/new", SetupLive, :new)
       live("/setup/:id/edit", SetupLive, :edit)

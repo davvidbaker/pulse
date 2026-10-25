@@ -2,7 +2,6 @@ defmodule PulseWeb.LogsLive do
   use PulseWeb, :live_view
 
   alias Pulse.{Logs, Setup}
-  alias Pulse.Logs.UsageLog
 
   @impl true
   def mount(_params, _session, socket) do

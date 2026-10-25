@@ -77,3 +77,7 @@ mix phx.server
 US carbon intensity collection lives in [`carbon-intensity/`](carbon-intensity/README.md). It is a
 separate always-on Fly app (`carbon-intensity`), not Dagster+ and not inside the
 Phoenix Machine.
+
+## Personal energy footprint
+
+Dagster now computes the personal daily footprint; Phoenix/Postgres stores inputs, results and delivery receipts. Visit `/footprint` to enter observations and assumptions. See [the data platform runbook](docs/data-platform.md) for configuration, methodology, schedules, API contracts and activation.

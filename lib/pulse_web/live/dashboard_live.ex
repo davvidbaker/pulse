@@ -1,5 +1,6 @@
 defmodule PulseWeb.DashboardLive do
   use PulseWeb, :live_view
+  import PulseWeb.FootprintComponents
 
   alias Pulse.{Notifications, Pulse, Suggestions, Summaries}
 
@@ -10,8 +11,9 @@ defmodule PulseWeb.DashboardLive do
     user = socket.assigns.current_user
 
     if connected?(socket) do
-      Phoenix.PubSub.subscribe(Pulse.PubSub, "user:#{user.id}:log_computed")
-      Phoenix.PubSub.subscribe(Pulse.PubSub, "user:#{user.id}:notifications")
+      Phoenix.PubSub.subscribe(Elixir.Pulse.PubSub, "user:#{user.id}:log_computed")
+      Phoenix.PubSub.subscribe(Elixir.Pulse.PubSub, "user:#{user.id}:notifications")
+      Process.send_after(self(), :refresh_footprint, 60_000)
     end
 
     socket =
@@ -53,10 +55,15 @@ defmodule PulseWeb.DashboardLive do
     {:noreply, assign(socket, :unread_count, Notifications.unread_count(user.id))}
   end
 
+  def handle_info(:refresh_footprint, socket) do
+    Process.send_after(self(), :refresh_footprint, 60_000)
+    {:noreply, load_data(socket)}
+  end
+
   defp load_data(socket) do
     user = socket.assigns.current_user
     period = socket.assigns.period
-    today = Date.utc_today()
+    today = Elixir.Pulse.Footprint.local_today(user)
 
     {from_date, to_date} =
       case period do
@@ -74,6 +81,7 @@ defmodule PulseWeb.DashboardLive do
     summaries = Summaries.list_summaries(user.id, from_date, to_date)
     suggestions = Suggestions.list_active_suggestions(user.id)
     pulse = Pulse.daily(user.id)
+    footprint = Elixir.Pulse.Footprint.result(user.id, today)
 
     total_cost =
       Enum.reduce(summaries, Decimal.new(0), fn s, acc -> Decimal.add(acc, s.total_cost) end)
@@ -87,6 +95,7 @@ defmodule PulseWeb.DashboardLive do
     |> assign(:summaries, summaries)
     |> assign(:suggestions, suggestions)
     |> assign(:pulse, pulse)
+    |> assign(:footprint, footprint)
     |> assign(:total_cost, total_cost)
     |> assign(:total_kwh, total_kwh)
     |> assign(:chart_data, chart_data)
@@ -99,24 +108,6 @@ defmodule PulseWeb.DashboardLive do
       costs: Enum.map(summaries, &Decimal.to_float(&1.total_cost)),
       kwh: Enum.map(summaries, &Decimal.to_float(&1.total_kwh))
     }
-  end
-
-  defp pulse_status(nil),
-    do: {"No pulse yet", "Log energy use today to establish your baseline.", "slate"}
-
-  defp pulse_status(rate) do
-    value = Decimal.to_float(rate)
-
-    cond do
-      value < 0.18 ->
-        {"Light pulse", "Your current mix is relatively low-emission.", "emerald"}
-
-      value < 0.30 ->
-        {"Steady pulse", "Your current mix is moderate.", "amber"}
-
-      true ->
-        {"Heavy pulse", "Your current mix is carbon-intensive right now.", "rose"}
-    end
   end
 
   @impl true
@@ -145,72 +136,12 @@ defmodule PulseWeb.DashboardLive do
         </div>
       </div>
 
-      <% {pulse_title, pulse_blurb, pulse_tone} = pulse_status(@pulse.pulse_rate) %>
-      <div class={[
-        "overflow-hidden rounded-[2rem] border p-6 md:p-8 shadow-sm",
-        pulse_tone == "emerald" &&
-          "border-emerald-200 bg-gradient-to-br from-emerald-50 via-lime-50 to-white",
-        pulse_tone == "amber" &&
-          "border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-white",
-        pulse_tone == "rose" &&
-          "border-rose-200 bg-gradient-to-br from-rose-50 via-orange-50 to-white",
-        pulse_tone == "slate" &&
-          "border-slate-200 bg-gradient-to-br from-slate-50 via-cyan-50 to-white"
-      ]}>
-        <div class="grid gap-6 lg:grid-cols-[1.4fr_0.8fr] lg:items-end">
-          <div class="space-y-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
-                Daily Pulse
-              </span>
-              <span class="text-sm font-medium text-slate-500">Personal marginal emissions rate</span>
-            </div>
-            <div>
-              <p class="text-sm font-medium text-slate-500">{pulse_title}</p>
-              <div class="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
-                <p class="pulse-score text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
-                  <%= if @pulse.pulse_rate do %>
-                    {Decimal.round(@pulse.pulse_rate, 3)}
-                  <% else %>
-                    --
-                  <% end %>
-                </p>
-                <p class="pb-2 text-lg font-medium text-slate-500">kg CO2e / kWh</p>
-              </div>
-              <p class="mt-3 max-w-2xl text-base text-slate-600">
-                {pulse_blurb}
-              </p>
-            </div>
-          </div>
-
-          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Today's emissions
-              </p>
-              <p class="mt-2 text-2xl font-bold text-slate-900">
-                {Decimal.round(@pulse.emissions_kg, 2)} kg
-              </p>
-            </div>
-            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Tracked energy
-              </p>
-              <p class="mt-2 text-2xl font-bold text-slate-900">
-                {Decimal.round(@pulse.total_kwh, 1)} kWh
-              </p>
-            </div>
-            <div class="rounded-2xl bg-white/85 p-4 ring-1 ring-black/5">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Logs included
-              </p>
-              <p class="mt-2 text-2xl font-bold text-slate-900">{@pulse.logs_count}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <.footprint_card result={@footprint} />
 
       <%!-- Secondary stats --%>
+      <p class="text-sm text-slate-500">
+        Logged emissions estimate (legacy factors): {Decimal.round(@pulse.emissions_kg, 2)} kg CO₂e. This is separate from your energy footprint.
+      </p>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
         <.stat_card
           label={"Total cost (#{@period})"}

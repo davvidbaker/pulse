@@ -20,3 +20,10 @@ run_launcher:
 
 telemetry:
   enabled: false
+
+# Serialize publication across daily partitions; late retries cannot overtake new runs.
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1

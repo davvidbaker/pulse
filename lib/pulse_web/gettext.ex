@@ -1,3 +1,3 @@
 defmodule PulseWeb.Gettext do
-  use Gettext, otp_app: :pulse
+  use Gettext.Backend, otp_app: :pulse
 end

@@ -88,5 +88,8 @@ jobs:
       - name: Install dependencies
         run: pip install -e '.[dev]'
 
+      - name: Validate Dagster definitions
+        run: dg check defs
+
       - name: Run tests
         run: pytest

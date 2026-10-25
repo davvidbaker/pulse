@@ -13,15 +13,14 @@ from carbon_intensity.assets import (
     us_grid_intensity,
 )
 
-defs = dg.Definitions(
-    assets=[
-        us_grid_intensity,
-        flambe_observation,
-        hourly_generation,
-        generation_observation,
-        hourly_hub_prices,
-        hub_price_observation,
-    ],
-    jobs=[carbon_intensity_job, grid_market_data_job],
-    schedules=[carbon_intensity_schedule, grid_market_data_schedule],
-)
+def grid_definitions():
+    return dg.Definitions(
+        assets=[us_grid_intensity, flambe_observation, hourly_generation, generation_observation,
+                hourly_hub_prices, hub_price_observation],
+        jobs=[carbon_intensity_job, grid_market_data_job],
+        schedules=[carbon_intensity_schedule, grid_market_data_schedule],
+    )
+
+from carbon_intensity.platform import PulsePlatformComponent
+
+defs = dg.Definitions.merge(grid_definitions(), PulsePlatformComponent().build_defs())

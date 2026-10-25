@@ -5,7 +5,7 @@ defmodule Pulse.Accounts do
   """
 
   alias Pulse.Repo
-  alias Pulse.Accounts.{User, UserToken}
+  alias Pulse.Accounts.{User, UserToken, UserNotifier}
 
   ## User queries
 
@@ -122,9 +122,16 @@ defmodule Pulse.Accounts do
 
   @spec update_user_settings(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_user_settings(user, attrs) do
-    user
-    |> User.settings_changeset(attrs)
-    |> Repo.update()
+    Pulse.Footprint.transaction(user.id, fn ->
+      case user |> User.settings_changeset(attrs) |> Repo.update() do
+        {:ok, saved} ->
+          if saved.timezone != user.timezone, do: Pulse.Footprint.invalidate(user.id)
+          saved
+
+        {:error, cs} ->
+          Repo.rollback(cs)
+      end
+    end)
   end
 
   ## Session

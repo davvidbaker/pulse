@@ -3,7 +3,8 @@ import Config
 config :pulse, Pulse.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: "127.0.0.1",
+  port: String.to_integer(System.get_env("PULSE_TEST_DB_PORT") || "5432"),
   database: "pulse_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2

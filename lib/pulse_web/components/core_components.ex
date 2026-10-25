@@ -5,8 +5,6 @@ defmodule PulseWeb.CoreComponents do
   use Phoenix.Component
   use PulseWeb, :verified_routes
 
-  import PulseWeb.Gettext
-
   alias Phoenix.LiveView.JS
 
   @doc "Flash message group"
