@@ -188,6 +188,7 @@ defmodule PulseWeb.CoreComponents do
   attr(:id, :any, default: nil)
   attr(:name, :any)
   attr(:label, :string, default: nil)
+  attr(:help, :string, default: nil)
   attr(:value, :any)
   attr(:type, :string, default: "text")
   attr(:errors, :list, default: [])
@@ -207,10 +208,11 @@ defmodule PulseWeb.CoreComponents do
       end
 
     ~H"""
-    <div>
-      <label :if={@label} for={@id} class="block text-sm font-medium text-gray-700 mb-1">
-        {@label}
-      </label>
+    <div class="relative">
+      <div :if={@label} class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+        <label for={@id}>{@label}</label>
+        <.field_help :if={@help} id={"#{@id || @name}-help"} label={@label} text={@help} />
+      </div>
       <input
         id={@id}
         name={@name}
@@ -232,6 +234,7 @@ defmodule PulseWeb.CoreComponents do
   attr(:id, :any, default: nil)
   attr(:name, :any)
   attr(:label, :string, default: nil)
+  attr(:help, :string, default: nil)
   attr(:value, :any)
   attr(:options, :list, default: [])
   attr(:errors, :list, default: [])
@@ -250,10 +253,11 @@ defmodule PulseWeb.CoreComponents do
       end
 
     ~H"""
-    <div>
-      <label :if={@label} for={@id} class="block text-sm font-medium text-gray-700 mb-1">
-        {@label}
-      </label>
+    <div class="relative">
+      <div :if={@label} class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+        <label for={@id}>{@label}</label>
+        <.field_help :if={@help} id={"#{@id || @name}-help"} label={@label} text={@help} />
+      </div>
       <select
         id={@id}
         name={@name}
@@ -264,6 +268,19 @@ defmodule PulseWeb.CoreComponents do
       </select>
       <p :for={error <- @errors} class="mt-1 text-xs text-red-600">{error}</p>
     </div>
+    """
+  end
+
+  attr(:label, :string, required: true)
+  attr(:text, :string, required: true)
+  attr(:id, :string, required: true)
+
+  def field_help(assigns) do
+    ~H"""
+    <span class="field-help">
+      <button type="button" aria-label={"About #{@label}"} aria-describedby={@id}>i</button>
+      <span id={@id} role="tooltip" class="help-text">{@text}</span>
+    </span>
     """
   end
 

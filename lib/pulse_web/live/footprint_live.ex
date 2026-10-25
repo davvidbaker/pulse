@@ -103,12 +103,13 @@ defmodule PulseWeb.FootprintLive do
       <h1 class="text-2xl font-bold">Your energy footprint</h1>
       <.form for={%{}} phx-submit="show_date" class="flex items-end gap-3">
         <.input name="date" type="date" value={@day} label="Accounting date" />
-        <.button>Show day</.button>
+        <.button type="submit">Show day</.button>
       </.form>
       <.footprint_card result={@result} />
       <p class="text-sm text-slate-600">
         Pulse estimates a full day, updating as evidence arrives. Home electricity includes local devices and cooking. Food defaults exclude those utilities, shopping travel and kitchen equipment. Unknown categories stay visible. Carbon emissions are a separate metric.
       </p>
+      <.population_defaults />
       <div class="grid lg:grid-cols-2 gap-8">
         <section class="rounded-2xl bg-white border p-5 space-y-4">
           <h2 class="text-lg font-semibold">Add an observation</h2>
@@ -140,6 +141,7 @@ defmodule PulseWeb.FootprintLive do
             <.select
               field={@observation_form[:basis]}
               label="Energy basis after unit conversion"
+              help="Source energy is already upstream-adjusted. Delivered electricity uses your grid source factor; gas uses 1.05. Vehicle fuel uses 1.0 and currently excludes extraction and refining."
               options={[
                 {"Source energy", "source"},
                 {"Delivered electricity", "electricity"},
@@ -153,6 +155,7 @@ defmodule PulseWeb.FootprintLive do
               step="any"
               min="0"
               label="Energy kWh per unit (required for custom units)"
+              help="Multiplies the quantity by this factor before the energy-basis and allocation adjustments. A custom factor needs a source or methodology. No generic dollar-to-energy conversion is assumed."
             />
             <.input
               field={@observation_form[:source_ref]}
@@ -166,6 +169,7 @@ defmodule PulseWeb.FootprintLive do
               min="0"
               max="1"
               label="Fraction of full day covered (1 = complete category total)"
+              help="Enter 1 only when this covers the whole category for the day. Partial coverage fills the remaining share with a baseline. With zero or unknown coverage, the model uses the greater of the observed energy and the available baseline."
             />
             <.input
               field={@observation_form[:allocation]}
@@ -174,6 +178,7 @@ defmodule PulseWeb.FootprintLive do
               min="0"
               max="1"
               label="Your allocation (1 = all; 0.5 = half)"
+              help="Share of this energy attributed to you, such as splitting a shared car trip. Household totals are additionally divided by your household size; avoid allocating that same share twice."
             />
             <.input
               field={@observation_form[:household]}
@@ -183,14 +188,16 @@ defmodule PulseWeb.FootprintLive do
             <.select
               field={@observation_form[:quality]}
               label="Input quality"
+              help="Measured activity means the quantity was measured, not that its energy conversion is exact. The current model uses a ±20% scenario range for observations and ±50% for inferred energy; these are not statistical confidence intervals."
               options={[{"Estimate", "estimated"}, {"Measured activity", "measured"}]}
             />
             <.select
               field={@observation_form[:included_in_scope]}
               label="Already included in another category?"
+              help="Keeps the record but excludes its energy from this category to avoid counting it twice. For example, a laptop at home is already in a complete household electricity total."
               options={[{"No, add this energy", ""} | Enum.map(Footprint.scopes(), &{label(&1), &1})]}
             />
-            <.button>Save observation</.button>
+            <.button type="submit">Save observation</.button>
           </.form>
         </section>
         <section class="rounded-2xl bg-white border p-5 space-y-4">
@@ -205,6 +212,7 @@ defmodule PulseWeb.FootprintLive do
               step="0.1"
               min="1"
               label="Household size"
+              help="Your share of household energy is the household total divided by this number. The initial 2.5 is a modeling assumption, not an estimate of your actual household."
             />
             <.input
               field={@profile_form[:grid_source_factor]}
@@ -212,10 +220,12 @@ defmodule PulseWeb.FootprintLive do
               step="0.01"
               min="1"
               label="Grid source energy per delivered kWh (US convention: 2.8)"
+              help="Converts electricity delivered to a home into upstream source-equivalent energy, including generation and delivery losses. The default 2.8 is an ENERGY STAR accounting convention, not your local grid measurement."
             />
             <.select
               field={@profile_form[:heating]}
               label="Home heating"
+              help="Gas adds a separate heating estimate. Electric heating is already inside home electricity. Unknown heating remains missing; it is not treated as zero."
               options={[
                 {"Unknown", "unknown"},
                 {"Natural gas", "gas"},
@@ -234,6 +244,7 @@ defmodule PulseWeb.FootprintLive do
               step="any"
               min="0"
               label="Typical daily driving km (blank uses US driver average)"
+              help="Blank uses FHWA 2024: 13,735 vehicle-miles per licensed US driver per year, about 60.6 km/day. This annual average is not specific to your location, weekday, or vehicle."
             />
             <.input
               field={@profile_form[:vehicle_kwh_per_km]}
@@ -241,10 +252,12 @@ defmodule PulseWeb.FootprintLive do
               step="0.001"
               min="0"
               label="Personal vehicle kWh/km (blank uses model lookup or 0.7 proxy)"
+              help="Your calibration takes priority, then a FuelEconomy.gov model/year lookup. Otherwise the model uses 0.7 fuel kWh/km: an agent-selected rough proxy, not a measured fleet average."
             />
             <.select
               field={@profile_form[:vehicle_energy_basis]}
               label="Personal vehicle efficiency basis"
+              help="Choose whether the efficiency describes fuel, delivered electricity, or energy already converted to the source basis. Delivered electricity is multiplied by the grid source factor."
               options={[
                 {"Fuel energy", "fuel"},
                 {"Delivered electricity", "electricity"},
@@ -270,7 +283,7 @@ defmodule PulseWeb.FootprintLive do
                 label={label(scope)}
               />
             </div>
-            <.button>Save assumptions</.button>
+            <.button type="submit">Save assumptions</.button>
           </.form>
           <p class="text-xs text-slate-500">
             Set your accounting timezone in <a href="/settings" class="underline">Settings</a>. Goods, flights, services and remote compute need your observations or explicit baselines; there is no universal per-prompt AI factor.

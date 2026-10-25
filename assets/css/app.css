@@ -1,6 +1,9 @@
 @font-face {
   font-family: "code";
-  src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/339525/FiraCodeVariable-VF_copy_copy.ttf");
+  src: url("/fonts/FiraCode-VF.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 @import "tailwindcss";
@@ -13,7 +16,6 @@
 
 html, body {
   font-family: "code", monospace;
-  font-variation-settings: "SERF" 1000;
 }
 
 /* Custom component styles */
@@ -27,12 +29,27 @@ html, body {
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
 @keyframes font-pulse {
-  to {
-    font-variation-settings: "SERF" 0;
-  }
+  from { font-variation-settings: "wght" 300; }
+  to { font-variation-settings: "wght" 700; }
 }
-
 .pulse-score {
-  font-variation-settings: "SERF" 1000;
+  font-variant-numeric: tabular-nums;
   animation: font-pulse var(--dur) infinite alternate ease-in-out;
 }
+@media (prefers-reduced-motion: reduce) {
+  .pulse-score { animation: none; font-variation-settings: "wght" 600; }
+}
+.field-help { display: inline-block; flex-shrink: 0; }
+.field-help button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15rem; height: 1.15rem; border: 1px solid currentColor;
+  border-radius: 50%; font-size: .75rem; cursor: help;
+}
+.field-help button:focus-visible { outline: 2px solid #059669; outline-offset: 3px; }
+.field-help .help-text {
+  display: none; position: absolute; left: 0; top: 100%; z-index: 60;
+  right: 0; padding: .75rem; border-radius: .5rem;
+  background: #0f172a; color: white; font-size: .75rem; line-height: 1.6;
+  box-shadow: 0 4px 12px #0003; font-weight: 400;
+}
+.field-help:hover .help-text, .field-help:focus-within .help-text { display: block; }

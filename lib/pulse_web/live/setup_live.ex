@@ -199,6 +199,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "tariff_kwh")}
                 value={metadata_param(@form_params, "tariff_kwh")}
                 label="Tariff ($/kWh)"
+                help="The variable price you pay for each kilowatt-hour of electricity, in dollars. Find it on your electricity bill. Exclude fixed monthly charges; use a blended rate if prices vary. This affects cost estimates, not energy use."
                 type="number"
                 step="0.001"
                 placeholder="0.15"
@@ -208,6 +209,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "rated_kw")}
                 value={metadata_param(@form_params, "rated_kw")}
                 label="Rated power (kW)"
+                help="Power drawn while this device runs, from its label or specification. 1 kW = 1,000 watts; a 100 W device is 0.1 kW. Actual draw can vary with load."
                 type="number"
                 step="0.1"
                 placeholder="2.5"
@@ -218,6 +220,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "cost_per_cubic_meter")}
                 value={metadata_param(@form_params, "cost_per_cubic_meter")}
                 label="Cost per m³ ($)"
+                help="Your billed price per cubic meter, excluding fixed charges. Check the units on your bill before entering it."
                 type="number"
                 step="0.001"
                 placeholder="0.08"
@@ -227,6 +230,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "rated_output_kw")}
                 value={metadata_param(@form_params, "rated_output_kw")}
                 label="Boiler output (kW)"
+                help="Useful heat output at rated load. Input energy can be higher because the boiler loses heat."
                 type="number"
                 step="0.1"
                 placeholder="24"
@@ -236,6 +240,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "calorific_value")}
                 value={metadata_param(@form_params, "calorific_value")}
                 label="Calorific value (MJ/m³)"
+                help="Energy in each cubic meter of gas. Use the value from your gas supplier; it varies by gas composition. 3.6 MJ = 1 kWh."
                 type="number"
                 step="0.1"
                 placeholder="38.5"
@@ -253,6 +258,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "consumption_per_100km")}
                 value={metadata_param(@form_params, "consumption_per_100km")}
                 label="Consumption (L/100km)"
+                help="Liters of fuel used to travel 100 km. Prefer your own refueling history over the advertised test-cycle figure."
                 type="number"
                 step="0.1"
                 placeholder="7.5"
@@ -262,6 +268,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "cost_per_liter")}
                 value={metadata_param(@form_params, "cost_per_liter")}
                 label="Cost per liter ($)"
+                help="Fuel price per liter in dollars, used for cost estimates."
                 type="number"
                 step="0.001"
                 placeholder="1.65"
@@ -272,6 +279,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "cost_per_cubic_meter")}
                 value={metadata_param(@form_params, "cost_per_cubic_meter")}
                 label="Cost per m³ ($)"
+                help="Your billed price per cubic meter, excluding fixed charges. Check the units on your bill before entering it."
                 type="number"
                 step="0.001"
                 placeholder="2.50"
@@ -282,6 +290,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "rated_output_kw")}
                 value={metadata_param(@form_params, "rated_output_kw")}
                 label="Rated output (kW)"
+                help="Useful heating power while operating at rated load; average use depends on runtime and load."
                 type="number"
                 step="0.1"
                 placeholder="18"
@@ -291,6 +300,7 @@ defmodule PulseWeb.SetupLive do
                 name={metadata_field_name(@form, "boiler_efficiency")}
                 value={metadata_param(@form_params, "boiler_efficiency")}
                 label="Boiler efficiency (0–1)"
+                help="Share of fuel energy delivered as useful heat. Enter 0.9 for 90%. Use a consistent heating-value basis with your fuel specification."
                 type="number"
                 step="0.01"
                 placeholder="0.90"
