@@ -2,6 +2,10 @@ import Config
 
 config :pulse, PulseWeb.Endpoint, server: true
 
+config :pulse,
+  platform_token: System.get_env("PULSE_PLATFORM_TOKEN"),
+  platform_user_id: System.get_env("PULSE_PLATFORM_USER_ID")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

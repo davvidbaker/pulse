@@ -10,6 +10,19 @@ defmodule Pulse.Logs do
 
   @spec log_usage(binary(), map()) :: {:ok, UsageLog.t()} | {:error, Ecto.Changeset.t()}
   def log_usage(user_id, attrs) do
+    Pulse.Footprint.transaction(user_id, fn ->
+      case do_log_usage(user_id, attrs) do
+        {:ok, saved} ->
+          Pulse.Footprint.invalidate(user_id)
+          saved
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp do_log_usage(user_id, attrs) do
     attrs = Map.put(attrs, "user_id", user_id)
 
     with {:ok, log} <-
@@ -49,6 +62,19 @@ defmodule Pulse.Logs do
 
   @spec update_log(UsageLog.t(), map()) :: {:ok, UsageLog.t()} | {:error, Ecto.Changeset.t()}
   def update_log(%UsageLog{} = log, attrs) do
+    Pulse.Footprint.transaction(log.user_id, fn ->
+      case do_update_log(log, attrs) do
+        {:ok, saved} ->
+          Pulse.Footprint.invalidate(log.user_id)
+          saved
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp do_update_log(%UsageLog{} = log, attrs) do
     with {:ok, updated} <-
            log
            |> UsageLog.changeset(attrs)
@@ -59,11 +85,30 @@ defmodule Pulse.Logs do
   end
 
   @spec delete_log(UsageLog.t()) :: {:ok, UsageLog.t()} | {:error, Ecto.Changeset.t()}
-  def delete_log(%UsageLog{} = log), do: Repo.delete(log)
+  def delete_log(%UsageLog{} = log) do
+    Pulse.Footprint.transaction(log.user_id, fn ->
+      saved = Repo.delete!(log)
+      Pulse.Footprint.invalidate(log.user_id)
+      saved
+    end)
+  end
 
   @spec update_computed_fields(UsageLog.t(), map()) ::
           {:ok, UsageLog.t()} | {:error, Ecto.Changeset.t()}
   def update_computed_fields(%UsageLog{} = log, result) do
+    Pulse.Footprint.transaction(log.user_id, fn ->
+      case do_update_computed_fields(log, result) do
+        {:ok, saved} ->
+          Pulse.Footprint.invalidate(log.user_id)
+          saved
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp do_update_computed_fields(%UsageLog{} = log, result) do
     log
     |> UsageLog.computed_changeset(result)
     |> Repo.update()

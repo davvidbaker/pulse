@@ -11,3 +11,4 @@ erl_crash.dump
 /priv/static/assets/
 carbon-intensity/.venv/
 carbon-intensity/.env
+carbon-intensity/.dagster-local/

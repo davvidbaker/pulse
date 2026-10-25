@@ -30,7 +30,7 @@ dagster-daemon run &
 
 # Schedules stay STOPPED in the instance DB unless started. Keep both hourly
 # grid jobs on across restarts even if the volume first loaded them as stopped.
-for schedule in carbon_intensity_schedule grid_market_data_schedule; do
+for schedule in carbon_intensity_schedule grid_market_data_schedule pulse_refresh_schedule pulse_publish_schedule; do
   (
     i=0
     log="/tmp/$schedule.log"

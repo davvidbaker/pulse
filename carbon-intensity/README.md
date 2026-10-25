@@ -81,3 +81,7 @@ Later deploys: push to `main` (paths under `carbon-intensity/`) or
 - Pulse: electricity kWh × matching hourly intensity → kgCO₂; hourly carbon
   rows are undated Flambe observations, so a later kgCO₂ / forecast-error
   merge cannot use the old `kind` + `observed_on` day key.
+
+## Pulse personal energy platform
+
+This same Dagster code location also contains the personal footprint graph, refreshing every five minutes and publishing stored results hourly. Its Postgres-backed Pulse API must be configured before its schedules execute. See [the platform runbook](../docs/data-platform.md). Existing grid publishers continue independently.

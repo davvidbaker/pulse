@@ -46,6 +46,7 @@ defmodule Pulse.MixProject do
 
       # Decimal arithmetic
       {:decimal, "~> 2.2"},
+      {:tzdata, "~> 1.1"},
 
       # HTTP client (future: smart meter integrations)
       {:req, "~> 0.5"},
