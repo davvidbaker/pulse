@@ -15,7 +15,7 @@ defmodule Pulse.Setup.EnergySourceTest do
         }
       }
 
-      changeset = EnergySource.changeset(%EnergySource{}, attrs)
+      changeset = EnergySource.changeset(%EnergySource{user_id: Ecto.UUID.generate()}, attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :unit) == "kwh"
@@ -37,7 +37,7 @@ defmodule Pulse.Setup.EnergySourceTest do
         }
       }
 
-      changeset = EnergySource.changeset(%EnergySource{}, attrs)
+      changeset = EnergySource.changeset(%EnergySource{user_id: Ecto.UUID.generate()}, attrs)
 
       refute changeset.valid?
       assert {"tariff_kwh must be a positive number", _opts} = changeset.errors[:metadata]

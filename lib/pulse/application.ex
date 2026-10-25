@@ -8,6 +8,7 @@ defmodule Pulse.Application do
     children = [
       PulseWeb.Telemetry,
       Pulse.Repo,
+      Pulse.Accounts.AuthLimiter,
       {DNSCluster, query: Application.get_env(:pulse, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Pulse.PubSub},
       {Finch, name: Pulse.Finch},

@@ -20,8 +20,14 @@ defmodule PulseWeb.UserLoginLive do
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <.form for={@form} action={~p"/login"} class="space-y-4">
-            <.input field={@form[:email]} type="email" label="Email" required />
-            <.input field={@form[:password]} type="password" label="Password" required />
+            <.input field={@form[:email]} type="email" label="Email" autocomplete="username" required />
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="Password"
+              autocomplete="current-password"
+              required
+            />
             <label class="flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" name="user[remember_me]" /> Keep me signed in
             </label>
@@ -29,6 +35,11 @@ defmodule PulseWeb.UserLoginLive do
           </.form>
         </div>
 
+        <p class="text-center mt-4 text-sm">
+          <.link href={~p"/reset-password"} class="text-green-600 hover:underline">
+            Forgot your password?
+          </.link>
+        </p>
         <div class="text-center mt-4 text-sm text-gray-500">
           Don't have an account?
           <.link href={~p"/register"} class="text-green-600 hover:underline">Sign up</.link>

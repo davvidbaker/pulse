@@ -4,6 +4,7 @@ defmodule Pulse.Accounts do
   Handles registration, authentication, password reset, and email confirmation.
   """
 
+  import Ecto.Query
   alias Pulse.Repo
   alias Pulse.Accounts.{User, UserToken, UserNotifier}
 
@@ -13,15 +14,22 @@ defmodule Pulse.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   @spec get_user_by_email(String.t()) :: User.t() | nil
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+  def get_user_by_email(email) when is_binary(email) and byte_size(email) <= 320 do
+    Repo.get_by(User, email: User.normalize_email(email))
   end
+
+  def get_user_by_email(_), do: nil
 
   @spec get_user_by_email_and_password(String.t(), String.t()) :: User.t() | nil
   def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+      when is_binary(email) and byte_size(email) <= 320 and is_binary(password) do
+    user = Repo.get_by(User, email: User.normalize_email(email))
     if User.valid_password?(user, password), do: user
+  end
+
+  def get_user_by_email_and_password(_, _) do
+    User.valid_password?(nil, nil)
+    nil
   end
 
   ## Registration
@@ -48,6 +56,8 @@ defmodule Pulse.Accounts do
   @spec apply_user_email(User.t(), String.t(), map()) ::
           {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def apply_user_email(user, password, attrs) do
+    user = get_user!(user.id)
+
     user
     |> User.email_changeset(attrs)
     |> User.validate_current_password(password)
@@ -100,19 +110,15 @@ defmodule Pulse.Accounts do
   @spec update_user_password(User.t(), String.t(), map()) ::
           {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_user_password(user, password, attrs) do
-    changeset =
-      user
+    Repo.transaction(fn ->
+      current_user = Repo.one!(from(u in User, where: u.id == ^user.id, lock: "FOR UPDATE"))
+
+      current_user
       |> User.password_changeset(attrs)
       |> User.validate_current_password(password)
-
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
-    end
+      |> persist_password_change()
+    end)
+    |> finish_password_change()
   end
 
   @spec change_user_settings(User.t()) :: Ecto.Changeset.t()
@@ -208,15 +214,58 @@ defmodule Pulse.Accounts do
     end
   end
 
-  @spec reset_user_password(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
-  def reset_user_password(user, attrs) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user}
-      {:error, :user, changeset, _} -> {:error, changeset}
+  @spec reset_user_password(String.t(), map()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t() | :invalid_token}
+  def reset_user_password(token, attrs) when is_binary(token) and is_map(attrs) do
+    Repo.transaction(fn ->
+      with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
+           %User{} = user <- Repo.one(query) do
+        # Serialize resets for this user, then recheck token validity under the lock.
+        # This also rejects forms mounted before a token was consumed or expired.
+        Repo.one!(from(u in User, where: u.id == ^user.id, lock: "FOR UPDATE"))
+
+        case Repo.one(query) do
+          %User{} = current_user ->
+            persist_password_change(User.password_changeset(current_user, attrs))
+
+          nil ->
+            Repo.rollback(:invalid_token)
+        end
+      else
+        _ -> Repo.rollback(:invalid_token)
+      end
+    end)
+    |> finish_password_change()
+  end
+
+  def reset_user_password(_, _), do: {:error, :invalid_token}
+
+  defp persist_password_change(changeset) do
+    case Repo.update(changeset) do
+      {:ok, user} ->
+        sessions =
+          Repo.all(
+            from(t in UserToken,
+              where: t.user_id == ^user.id and t.context == "session",
+              select: t.token
+            )
+          )
+
+        Repo.delete_all(UserToken.by_user_and_contexts_query(user, :all))
+        {user, sessions}
+
+      {:error, changeset} ->
+        Repo.rollback(changeset)
     end
   end
+
+  defp finish_password_change({:ok, {user, sessions}}) do
+    for token <- sessions do
+      PulseWeb.Endpoint.broadcast("users_sessions:#{Base.url_encode64(token)}", "disconnect", %{})
+    end
+
+    {:ok, user}
+  end
+
+  defp finish_password_change({:error, reason}), do: {:error, reason}
 end

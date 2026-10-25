@@ -21,6 +21,19 @@ defmodule PulseWeb.UserRegistrationLive do
   end
 
   def handle_event("save", %{"user" => params}, socket) do
+    if Pulse.Accounts.AuthLimiter.allow?(:register, params["email"]) do
+      register(socket, params)
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         "Too many registration attempts. Please try again in fifteen minutes."
+       )}
+    end
+  end
+
+  defp register(socket, params) do
     case Accounts.register_user(params) do
       {:ok, user} ->
         delivery =

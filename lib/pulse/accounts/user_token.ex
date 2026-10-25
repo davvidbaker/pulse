@@ -44,7 +44,7 @@ defmodule Pulse.Accounts.UserToken do
     build_hashed_token(user, context, user.email)
   end
 
-  def verify_email_token_query(token, context) do
+  def verify_email_token_query(token, context) when is_binary(token) and byte_size(token) == 43 do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
@@ -64,7 +64,10 @@ defmodule Pulse.Accounts.UserToken do
     end
   end
 
-  def verify_change_email_token_query(token, context) do
+  def verify_email_token_query(_, _), do: :error
+
+  def verify_change_email_token_query(token, context)
+      when is_binary(token) and byte_size(token) == 43 do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
@@ -80,6 +83,8 @@ defmodule Pulse.Accounts.UserToken do
         :error
     end
   end
+
+  def verify_change_email_token_query(_, _), do: :error
 
   def by_token_and_context_query(token, context) do
     from(UserToken, where: [token: ^token, context: ^context])

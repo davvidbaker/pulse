@@ -8,6 +8,7 @@ defmodule Pulse.Accounts.User do
   schema "users" do
     field(:email, :string)
     field(:password, :string, virtual: true, redact: true)
+    field(:current_password, :string, virtual: true, redact: true)
     field(:hashed_password, :string, redact: true)
     field(:confirmed_at, :utc_datetime)
     field(:timezone, :string, default: "UTC")
@@ -43,7 +44,7 @@ defmodule Pulse.Accounts.User do
   def password_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:password])
-    |> validate_confirmation(:password, message: "does not match password")
+    |> validate_confirmation(:password, required: true, message: "does not match password")
     |> validate_password(opts)
   end
 
@@ -60,7 +61,8 @@ defmodule Pulse.Accounts.User do
   end
 
   def valid_password?(%__MODULE__{hashed_password: hashed_password}, password)
-      when is_binary(hashed_password) and byte_size(password) > 0 do
+      when is_binary(hashed_password) and is_binary(password) and byte_size(password) > 0 and
+             byte_size(password) <= 72 do
     Bcrypt.verify_pass(password, hashed_password)
   end
 
@@ -79,8 +81,12 @@ defmodule Pulse.Accounts.User do
     end
   end
 
+  def normalize_email(nil), do: nil
+  def normalize_email(email), do: email |> String.trim() |> String.downcase()
+
   defp validate_email(changeset, opts) do
     changeset
+    |> update_change(:email, &normalize_email/1)
     |> validate_required([:email])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> validate_length(:email, max: 160)
@@ -91,6 +97,7 @@ defmodule Pulse.Accounts.User do
     changeset
     |> validate_required([:password])
     |> validate_length(:password, min: 12, max: 72)
+    |> validate_length(:password, max: 72, count: :bytes)
     |> maybe_hash_password(opts)
   end
 
@@ -100,7 +107,6 @@ defmodule Pulse.Accounts.User do
 
     if hash_password? && password && changeset.valid? do
       changeset
-      |> validate_length(:password, max: 72, count: :bytes)
       |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
       |> delete_change(:password)
     else

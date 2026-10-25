@@ -71,7 +71,6 @@ defmodule PulseWeb.Router do
       live("/badges", BadgesLive, :index)
       live("/settings", SettingsLive, :index)
 
-      live("/confirm-email/:token", UserConfirmationLive, :edit)
       live("/users/settings", UserSettingsLive, :edit)
       live("/users/settings/confirm-email/:token", UserSettingsLive, :confirm_email)
     end
@@ -84,6 +83,7 @@ defmodule PulseWeb.Router do
 
     live_session :current_user,
       on_mount: [{PulseWeb.UserAuth, :mount_current_user}] do
+      live("/confirm-email/:token", UserConfirmationLive, :edit)
       live("/confirm", UserConfirmationInstructionsLive, :new)
     end
   end
