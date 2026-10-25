@@ -27,8 +27,8 @@ defmodule PulseWeb.FootprintComponentsTest do
       }
 
       html = render_component(&FootprintComponents.footprint_card/1, result: result)
-      assert html =~ ~s(class="pulse-score">2.00</span>)
-      assert html =~ "1.00–3.00 kW average"
+      assert html =~ ~s(class="pulse-score">2,000</span>)
+      assert html =~ "1,000–3,000 watts average"
       assert html =~ "#{hours}.0-hour local day"
       assert html =~ "Missing is not zero"
     end

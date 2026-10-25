@@ -19,12 +19,12 @@ defmodule PulseWeb.FootprintComponents do
       </div>
       <%= if @result do %>
         <p class="text-5xl font-bold text-slate-950">
-          <span class="pulse-score">{power(@result.data["total_kwh"], @hours)}</span>
-          <span class="text-lg font-medium">kW average</span>
+          <span class="pulse-score">{watts(@result.data["total_kwh"], @hours)}</span>
+          <span class="text-lg font-medium">watts</span>
         </p>
         <p class="text-sm text-slate-600">
           {energy(@result.data["total_kwh"])} kWh over this {@hours}-hour local day.
-          1 kW = 1,000 watts. This includes upstream energy; it is an estimate for the full day, not a live meter reading.
+          This includes upstream energy; it is an estimate for the full day, not a live meter reading.
         </p>
         <p :if={@result.data["status"] == "partial"} class="font-semibold text-amber-900">
           Partial footprint — some categories are not yet estimated.
@@ -33,10 +33,10 @@ defmodule PulseWeb.FootprintComponents do
           Inputs changed. Showing the previous result while the next calculation is pending.
         </p>
         <p class="text-sm text-slate-600">
-          Modeling range: {power(@result.data["lower_kwh"], @hours)}–{power(
+          Modeling range: {watts(@result.data["lower_kwh"], @hours)}–{watts(
             @result.data["upper_kwh"],
             @hours
-          )} kW average.
+          )} watts average.
           Based on observed inputs: {round(@result.data["observed_fraction"] * 100)}% of estimated energy.
           This range is not a statistical confidence interval.
         </p>
@@ -47,7 +47,7 @@ defmodule PulseWeb.FootprintComponents do
               <%= if @result.data["categories"][scope]["missing"] do %>
                 Not fully estimated
               <% else %>
-                {power(@result.data["categories"][scope]["source_kwh"], @hours)} kW
+                {watts(@result.data["categories"][scope]["source_kwh"], @hours)} W
               <% end %>
             </p>
             <details class="mt-2 text-xs text-slate-600 space-y-2">
@@ -178,7 +178,7 @@ defmodule PulseWeb.FootprintComponents do
             >ENERGY STAR source-energy convention</a>:
             delivered electricity defaults to 2.8 source kWh per delivered kWh; gas uses 1.05.
             These are accounting factors, not local measurements. The scenario range is ±20% for observed energy and ±50% for inferred energy;
-            it is not a statistical confidence interval. Average kW divides the day's source kWh by the actual hours in that local day.
+            it is not a statistical confidence interval. Average watts divides the day's source kWh by the actual hours in that local day, then multiplies by 1,000.
           </dd>
         </div>
       </dl>
@@ -191,7 +191,12 @@ defmodule PulseWeb.FootprintComponents do
     DateTime.diff(last, first, :second) / 3600
   end
 
-  defp power(kwh, hours), do: :erlang.float_to_binary(kwh / hours, decimals: 2)
+  defp watts(kwh, hours) do
+    round(kwh * 1000 / hours)
+    |> Integer.to_string()
+    |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",")
+  end
+
   defp energy(kwh), do: :erlang.float_to_binary(kwh * 1.0, decimals: 1)
 
   defp method_description("personal_history"),
