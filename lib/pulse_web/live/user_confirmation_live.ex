@@ -10,7 +10,7 @@ defmodule PulseWeb.UserConfirmationLive do
         {:ok,
          socket
          |> put_flash(:info, "Account confirmed!")
-         |> redirect(to: ~p"/dashboard")}
+         |> redirect(to: ~p"/login")}
 
       :error ->
         {:ok,

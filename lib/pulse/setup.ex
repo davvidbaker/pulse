@@ -29,7 +29,10 @@ defmodule Pulse.Setup do
 
   @spec get_energy_source(binary(), binary()) :: EnergySource.t() | nil
   def get_energy_source(user_id, id) do
-    Repo.get_by(EnergySource, id: id, user_id: user_id)
+    case Ecto.UUID.cast(id) do
+      {:ok, uuid} -> Repo.get_by(EnergySource, id: uuid, user_id: user_id)
+      :error -> nil
+    end
   end
 
   @spec create_energy_source(binary(), map()) ::

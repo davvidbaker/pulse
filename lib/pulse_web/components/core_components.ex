@@ -161,7 +161,7 @@ defmodule PulseWeb.CoreComponents do
   attr(:type, :string, default: "button")
   attr(:variant, :atom, values: [:primary, :secondary, :danger], default: :primary)
   attr(:class, :string, default: "")
-  attr(:rest, :global)
+  attr(:rest, :global, include: ~w(disabled))
   slot(:inner_block, required: true)
 
   def button(assigns) do
@@ -191,8 +191,12 @@ defmodule PulseWeb.CoreComponents do
   attr(:help, :string, default: nil)
   attr(:value, :any)
   attr(:type, :string, default: "text")
-  attr(:errors, :list, default: [])
-  attr(:rest, :global, include: ~w(placeholder required min max step))
+  attr(:errors, :list, default: nil)
+
+  attr(:rest, :global,
+    include: ~w(placeholder required min max step autocomplete minlength maxlength)
+  )
+
   slot(:inner_block)
 
   def input(assigns) do
@@ -202,9 +206,9 @@ defmodule PulseWeb.CoreComponents do
         |> assign(:id, assigns.field.id)
         |> assign(:name, assigns.field.name)
         |> assign_new(:value, fn -> assigns.field.value end)
-        |> assign_new(:errors, fn -> Enum.map(assigns.field.errors, &translate_error/1) end)
+        |> assign(:errors, assigns.errors || Enum.map(assigns.field.errors, &translate_error/1))
       else
-        assigns
+        assign(assigns, :errors, assigns.errors || [])
       end
 
     ~H"""
@@ -216,8 +220,9 @@ defmodule PulseWeb.CoreComponents do
       <input
         id={@id}
         name={@name}
+        aria-invalid={@errors != [] && "true"}
         type={@type}
-        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        value={if @type != "password", do: Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
           "block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500",
           @errors == [] && "border-gray-300",
@@ -237,7 +242,7 @@ defmodule PulseWeb.CoreComponents do
   attr(:help, :string, default: nil)
   attr(:value, :any)
   attr(:options, :list, default: [])
-  attr(:errors, :list, default: [])
+  attr(:errors, :list, default: nil)
   attr(:rest, :global)
 
   def select(assigns) do
@@ -247,9 +252,9 @@ defmodule PulseWeb.CoreComponents do
         |> assign(:id, assigns.field.id)
         |> assign(:name, assigns.field.name)
         |> assign_new(:value, fn -> assigns.field.value end)
-        |> assign_new(:errors, fn -> Enum.map(assigns.field.errors, &translate_error/1) end)
+        |> assign(:errors, assigns.errors || Enum.map(assigns.field.errors, &translate_error/1))
       else
-        assigns
+        assign(assigns, :errors, assigns.errors || [])
       end
 
     ~H"""
@@ -261,6 +266,7 @@ defmodule PulseWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
+        aria-invalid={@errors != [] && "true"}
         class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         {@rest}
       >
@@ -284,8 +290,13 @@ defmodule PulseWeb.CoreComponents do
     """
   end
 
-  defp translate_error({msg, opts}),
-    do: Gettext.dngettext(PulseWeb.Gettext, "errors", msg, msg, 1, opts)
+  defp translate_error({msg, opts}) do
+    if count = opts[:count] do
+      Gettext.dngettext(PulseWeb.Gettext, "errors", msg, msg, count, opts)
+    else
+      Gettext.dgettext(PulseWeb.Gettext, "errors", msg, opts)
+    end
+  end
 
   defp translate_error(msg) when is_binary(msg), do: msg
 end

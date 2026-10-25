@@ -28,9 +28,20 @@ defmodule Pulse.Logs do
     with {:ok, log} <-
            %UsageLog{}
            |> UsageLog.changeset(attrs)
+           |> validate_source_owner(user_id)
            |> Repo.insert() do
       Oban.insert(Pulse.Workers.CalculationWorker.new(%{log_id: log.id}))
       {:ok, log}
+    end
+  end
+
+  defp validate_source_owner(changeset, user_id) do
+    id = Ecto.Changeset.get_field(changeset, :energy_source_id)
+
+    if changeset.valid? and is_nil(Pulse.Setup.get_energy_source(user_id, id)) do
+      Ecto.Changeset.add_error(changeset, :energy_source_id, "must be one of your devices")
+    else
+      changeset
     end
   end
 
@@ -75,9 +86,12 @@ defmodule Pulse.Logs do
   end
 
   defp do_update_log(%UsageLog{} = log, attrs) do
+    attrs = Map.put(attrs, "user_id", log.user_id)
+
     with {:ok, updated} <-
            log
            |> UsageLog.changeset(attrs)
+           |> validate_source_owner(log.user_id)
            |> Repo.update() do
       Oban.insert(Pulse.Workers.CalculationWorker.new(%{log_id: updated.id}))
       {:ok, updated}

@@ -26,12 +26,18 @@ defmodule PulseWeb.UserResetPasswordLive do
 
   @impl true
   def handle_event("save", %{"user" => params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, params) do
+    case Accounts.reset_user_password(socket.assigns.token, params) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully. Please log in.")
          |> redirect(to: ~p"/login")}
+
+      {:error, :invalid_token} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Reset link is invalid or has expired.")
+         |> redirect(to: ~p"/reset-password")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "user"))}
@@ -49,11 +55,18 @@ defmodule PulseWeb.UserResetPasswordLive do
           phx-submit="save"
           class="space-y-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6"
         >
-          <.input field={@form[:password]} type="password" label="New password" required />
+          <.input
+            field={@form[:password]}
+            type="password"
+            label="New password (12+ characters)"
+            autocomplete="new-password"
+            required
+          />
           <.input
             field={@form[:password_confirmation]}
             type="password"
             label="Confirm password"
+            autocomplete="new-password"
             required
           />
           <.button type="submit" variant={:primary} class="w-full">Reset password</.button>

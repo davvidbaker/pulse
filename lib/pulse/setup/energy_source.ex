@@ -34,7 +34,7 @@ defmodule Pulse.Setup.EnergySource do
   """
   def changeset(energy_source, attrs, opts \\ []) do
     energy_source
-    |> cast(attrs, [:source_type, :name, :unit, :metadata, :active, :user_id])
+    |> cast(attrs, [:source_type, :name, :unit, :metadata, :active])
     |> validate_required([:source_type, :name, :user_id])
     |> validate_inclusion(:source_type, @source_types,
       message: "must be one of: #{Enum.join(@source_types, ", ")}"

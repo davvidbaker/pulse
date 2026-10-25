@@ -40,13 +40,14 @@ defmodule PulseWeb.SetupLive do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    source = Setup.get_energy_source!(id)
-    changeset = Setup.change_energy_source(source)
-
-    socket
-    |> assign(:editing_source, source)
-    |> assign(:form_params, source_to_params(source))
-    |> assign(:form, to_form(changeset))
+    if source = Setup.get_energy_source(socket.assigns.current_user.id, id) do
+      socket
+      |> assign(:editing_source, source)
+      |> assign(:form_params, source_to_params(source))
+      |> assign(:form, to_form(Setup.change_energy_source(source)))
+    else
+      socket |> put_flash(:error, "Device not found.") |> push_patch(to: ~p"/setup")
+    end
   end
 
   @impl true
@@ -98,14 +99,17 @@ defmodule PulseWeb.SetupLive do
 
   def handle_event("delete", %{"id" => id}, socket) do
     user = socket.assigns.current_user
-    source = Setup.get_energy_source!(id)
-    Setup.delete_energy_source(source)
-    sources = Setup.list_all_energy_sources(user.id)
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Device deactivated.")
-     |> assign(:sources, sources)}
+    if source = Setup.get_energy_source(user.id, id) do
+      Setup.delete_energy_source(source)
+
+      {:noreply,
+       socket
+       |> put_flash(:info, "Device deactivated.")
+       |> assign(:sources, Setup.list_all_energy_sources(user.id))}
+    else
+      {:noreply, put_flash(socket, :error, "Device not found.")}
+    end
   end
 
   def handle_event("close_form", _params, socket) do
