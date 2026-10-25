@@ -59,10 +59,13 @@ class PulsePlatformComponent(dg.Component):
             return dg.MaterializeResult(metadata={"revision": revision, "delivery": "acknowledged"})
 
         job = dg.define_asset_job("pulse_daily", selection=dg.AssetSelection.groups("pulse"),
+                                  executor_def=dg.in_process_executor,
                                   tags={"pulse/platform": "true"})
         refresh_job = dg.define_asset_job("pulse_refresh", selection=dg.AssetSelection.assets(inputs, normalized, footprint, stored),
+                                          executor_def=dg.in_process_executor,
                                           tags={"pulse/platform": "true"})
         publish_job = dg.define_asset_job("pulse_publish", selection=dg.AssetSelection.assets(delivery),
+                                          executor_def=dg.in_process_executor,
                                           tags={"pulse/platform": "true"})
 
         def requests(context):
