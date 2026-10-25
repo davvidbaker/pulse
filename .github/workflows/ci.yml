@@ -57,6 +57,11 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Build frontend assets
+        run: |
+          npm ci --prefix assets --ignore-scripts
+          mix assets.build
+
       - name: Check formatting
         run: mix format --check-formatted
 
