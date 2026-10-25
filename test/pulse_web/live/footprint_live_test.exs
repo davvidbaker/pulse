@@ -7,6 +7,12 @@ defmodule PulseWeb.FootprintLiveTest do
     {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/footprint")
     assert html =~ "Your energy footprint"
     assert html =~ "Waiting for the first calculation"
+    assert html =~ "licensed US drivers"
+    assert html =~ "334,914,895"
+    assert html =~ "agent-selected vehicle proxy"
+    assert has_element?(view, "button[type=submit]", "Save assumptions")
+    assert has_element?(view, "button[type=submit]", "Save observation")
+    assert has_element?(view, "button[aria-label=\"About Household size\"]")
 
     assert view
            |> element("form[phx-submit=save_profile]")
@@ -42,7 +48,7 @@ defmodule PulseWeb.FootprintLiveTest do
   test "dashboard presents energy and keeps carbon separate", %{conn: conn} do
     user = insert(:user)
     {:ok, _, html} = conn |> log_in_user(user) |> live(~p"/dashboard")
-    assert html =~ "Estimated full-day energy footprint"
+    assert html =~ "Estimated average power"
     assert html =~ "Logged emissions estimate"
     refute html =~ "Personal marginal emissions rate"
   end
