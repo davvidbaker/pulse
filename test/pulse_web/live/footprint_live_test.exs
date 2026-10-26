@@ -45,11 +45,11 @@ defmodule PulseWeb.FootprintLiveTest do
     assert length(Pulse.Footprint.list_observations(user.id)) == 1
   end
 
-  test "dashboard presents energy and keeps carbon separate", %{conn: conn} do
+  test "dashboard distinguishes missing estimates from logged utility usage", %{conn: conn} do
     user = insert(:user)
     {:ok, _, html} = conn |> log_in_user(user) |> live(~p"/dashboard")
-    assert html =~ "Estimated average power"
-    assert html =~ "Logged emissions estimate"
+    assert html =~ "No calculated days in this period yet"
+    assert html =~ "Logged utility usage and costs"
     refute html =~ "Personal marginal emissions rate"
   end
 end

@@ -252,6 +252,20 @@ defmodule Pulse.Footprint do
 
   def result(user_id, day), do: Repo.get_by(Result, user_id: user_id, date: day)
 
+  def period_summary(user, period, today \\ nil) do
+    today = today || local_today(user)
+    {first, last} = Pulse.Footprint.PeriodSummary.bounds(today, period)
+
+    results =
+      Repo.all(
+        from r in Result,
+          where: r.user_id == ^user.id and r.date >= ^first and r.date <= ^last,
+          order_by: r.date
+      )
+
+    Pulse.Footprint.PeriodSummary.new(results, period, first, last, user.timezone)
+  end
+
   def save_result(user, day, data) do
     transaction(user.id, fn ->
       unless valid_result?(data, day) and data["timezone"] == user.timezone,

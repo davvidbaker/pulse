@@ -40,41 +40,7 @@ defmodule PulseWeb.FootprintComponents do
           Based on observed inputs: {round(@result.data["observed_fraction"] * 100)}% of estimated energy.
           This range is not a statistical confidence interval.
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div :for={scope <- Pulse.Footprint.scopes()} class="rounded-xl bg-white p-3 min-w-0">
-            <p class="text-sm text-slate-600">{label(scope)}</p>
-            <p class="font-semibold">
-              <%= if @result.data["categories"][scope]["missing"] do %>
-                Not fully estimated
-              <% else %>
-                {watts(@result.data["categories"][scope]["source_kwh"], @hours)} W
-              <% end %>
-            </p>
-            <details class="mt-2 text-xs text-slate-600 space-y-2">
-              <summary class="cursor-pointer underline">
-                {label(@result.data["categories"][scope]["method"])}
-              </summary>
-              <p>{method_description(@result.data["categories"][scope]["method"])}</p>
-              <p>
-                {energy(@result.data["categories"][scope]["source_kwh"])} kWh attributed to this day.
-              </p>
-              <p :if={@result.data["categories"][scope]["missing"]}>
-                Missing is not zero: any recorded energy is included, but the full category is unknown.
-              </p>
-              <p :if={@result.data["categories"][scope]["source_ref"]} class="break-words">
-                Baseline reference: {@result.data["categories"][scope]["source_ref"]}
-              </p>
-              <p
-                :for={factor <- @result.data["categories"][scope]["factors"] || []}
-                class="break-words"
-              >
-                Input: {factor["quantity"]} {factor["unit"]} · {factor["quality"]} · {energy(
-                  factor["source_kwh"]
-                )} source kWh. {factor["source_ref"]}
-              </p>
-            </details>
-          </div>
-        </div>
+        <.footprint_categories categories={@result.data["categories"]} hours={@hours} />
         <p class="text-xs text-slate-500">
           Accounting date: {@result.date} · {@result.data["timezone"]} · calculated {Calendar.strftime(
             @result.calculated_at,
@@ -91,6 +57,144 @@ defmodule PulseWeb.FootprintComponents do
     </section>
     """
   end
+
+  attr :categories, :map, required: true
+  attr :hours, :float, required: true
+
+  def footprint_categories(assigns) do
+    ~H"""
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div :for={scope <- Pulse.Footprint.scopes()} class="rounded-xl bg-white p-3 min-w-0">
+        <p class="text-sm text-slate-600">{label(scope)}</p>
+        <p class="font-semibold">
+          <%= if @categories[scope]["missing"] do %>
+            Not fully estimated
+          <% else %>
+            {watts(@categories[scope]["source_kwh"], @hours)} W
+          <% end %>
+        </p>
+        <details class="mt-2 text-xs text-slate-600 space-y-2">
+          <summary class="cursor-pointer underline">
+            {label(@categories[scope]["method"])}
+          </summary>
+          <p :if={@categories[scope]["day_count"]}>
+            Full category estimated on {@categories[scope]["full_estimate_days"]} of {@categories[
+              scope
+            ]["day_count"]} available days.
+          </p>
+          <p :if={length(@categories[scope]["methods"] || []) > 1}>
+            Methods: {Enum.map_join(@categories[scope]["methods"], ", ", &label/1)}
+          </p>
+          <p>{method_description(@categories[scope]["method"])}</p>
+          <p>
+            {energy(@categories[scope]["source_kwh"])} kWh attributed to the selected period.
+          </p>
+          <p :if={@categories[scope]["missing"]}>
+            Missing is not zero: any recorded energy is included, but the full category is unknown.
+          </p>
+          <p :if={@categories[scope]["source_ref"]} class="break-words">
+            Baseline reference: {@categories[scope]["source_ref"]}
+          </p>
+          <p
+            :for={factor <- @categories[scope]["factors"] || []}
+            class="break-words"
+          >
+            Input: {factor["quantity"]} {factor["unit"]} · {factor["quality"]} · {energy(
+              factor["source_kwh"]
+            )} source kWh. {factor["source_ref"]}
+          </p>
+        </details>
+      </div>
+    </div>
+    """
+  end
+
+  attr :summary, :any, required: true
+  slot :controls
+
+  def pulse_hero(assigns) do
+    ~H"""
+    <section id="pulse-hero" data-period={@summary.period} class="pulse-hero space-y-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 class="text-lg font-semibold text-emerald-950">Your Pulse</h1>
+          <p id="pulse-period-label" class="text-sm text-slate-600">
+            {period_label(@summary.period)}
+          </p>
+        </div>
+        <div role="group" aria-label="Score period" class="flex gap-2">{render_slot(@controls)}</div>
+      </div>
+      <%= if @summary.available_days > 0 do %>
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-slate-950">
+          <span id="pulse-hero-score" class="pulse-score pulse-hero-number">
+            {watts(@summary.total_kwh, @summary.hours)}
+          </span>
+          <span class="text-xl font-medium">watts</span>
+        </div>
+        <p class="text-sm text-slate-600">Estimated average power · includes upstream energy</p>
+      <% else %>
+        <p class="pulse-hero-number text-slate-400">—</p>
+        <p>No calculated days in this period yet.</p>
+      <% end %>
+      <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-700">
+        <p id="pulse-period-dates">
+          {Calendar.strftime(@summary.from, "%b %d, %Y")} – {Calendar.strftime(
+            @summary.to,
+            "%b %d, %Y"
+          )}
+        </p>
+        <p id="pulse-period-coverage">
+          Days available: {@summary.available_days} / {@summary.total_days}
+        </p>
+      </div>
+      <p :if={@summary.available_days < @summary.total_days} class="text-sm text-amber-900">
+        Incomplete history. The average uses available days only; missing days are not counted as zero.
+      </p>
+      <p
+        :if={@summary.available_days > 0 and @summary.missing_scopes != []}
+        class="text-sm font-semibold text-amber-900"
+      >
+        Partial footprint · {length(@summary.missing_scopes)} categories are not fully estimated.
+      </p>
+      <p :if={@summary.dirty} class="text-sm font-semibold text-amber-900">
+        Inputs changed. Some estimates are awaiting recalculation.
+      </p>
+      <%= if @summary.available_days > 0 do %>
+        <details id="pulse-breakdown" class="border-t border-emerald-200 pt-4 space-y-4">
+          <summary class="cursor-pointer text-sm font-medium">
+            Energy breakdown and assumptions
+          </summary>
+          <p class="text-sm text-slate-600">
+            {energy(@summary.total_kwh)} source kWh across {@summary.hours} hours of available daily estimates.
+            Today's estimate covers the full local day, not just time elapsed. This is not a live meter reading.
+          </p>
+          <p class="text-sm text-slate-600">
+            Modeling range: {watts(@summary.lower_kwh, @summary.hours)}–{watts(
+              @summary.upper_kwh,
+              @summary.hours
+            )} watts.
+            Observed inputs: {round(@summary.observed_fraction * 100)}% of estimated energy.
+            The range is not a statistical confidence interval.
+          </p>
+          <.footprint_categories categories={@summary.categories} hours={@summary.hours} />
+          <a href="/footprint" class="text-sm underline">
+            Daily inputs, population defaults and sources
+          </a>
+          <p class="text-xs text-slate-500">
+            {@summary.timezone} · latest calculation {Calendar.strftime(
+              @summary.calculated_at,
+              "%Y-%m-%d %H:%M UTC"
+            )}
+          </p>
+        </details>
+      <% end %>
+    </section>
+    """
+  end
+
+  defp period_label(:day), do: "Today's average"
+  defp period_label(:week), do: "This week's average · Monday through today"
+  defp period_label(:month), do: "This month's average · month to date"
 
   def population_defaults(assigns) do
     ~H"""
@@ -192,9 +296,9 @@ defmodule PulseWeb.FootprintComponents do
   end
 
   defp watts(kwh, hours) do
-    round(kwh * 1000 / hours)
-    |> Integer.to_string()
-    |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",")
+    value = round(kwh * 1000 / hours)
+    digits = Integer.to_string(value)
+    if value >= 10_000, do: String.replace(digits, ~r/\B(?=(\d{3})+(?!\d))/, ","), else: digits
   end
 
   defp energy(kwh), do: :erlang.float_to_binary(kwh * 1.0, decimals: 1)
@@ -215,6 +319,10 @@ defmodule PulseWeb.FootprintComponents do
 
   defp method_description("included_elsewhere"),
     do: "Energy is declared inside another category, or the profile declares no separate use."
+
+  defp method_description("mixed"),
+    do:
+      "Combines the listed daily estimation methods. Inspect individual days under Inputs and assumptions for their evidence."
 
   defp method_description(_), do: "There is not enough information to estimate the full category."
   def label(value), do: value |> String.replace("_", " ") |> String.capitalize()

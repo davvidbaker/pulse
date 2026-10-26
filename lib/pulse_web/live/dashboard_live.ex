@@ -2,7 +2,7 @@ defmodule PulseWeb.DashboardLive do
   use PulseWeb, :live_view
   import PulseWeb.FootprintComponents
 
-  alias Pulse.{Notifications, Pulse, Suggestions, Summaries}
+  alias Pulse.{Footprint, Notifications, Suggestions, Summaries}
 
   @periods [:day, :week, :month]
 
@@ -19,7 +19,7 @@ defmodule PulseWeb.DashboardLive do
     socket =
       socket
       |> assign(:page_title, "Dashboard")
-      |> assign(:period, :week)
+      |> assign(:period, :day)
       |> assign(:unread_count, Notifications.unread_count(user.id))
       |> load_data()
 
@@ -28,7 +28,7 @@ defmodule PulseWeb.DashboardLive do
 
   @impl true
   def handle_event("change_period", %{"period" => period}, socket) do
-    period = String.to_existing_atom(period)
+    period = Enum.find(@periods, &(to_string(&1) == period))
 
     if period in @periods do
       {:noreply, socket |> assign(:period, period) |> load_data()}
@@ -63,25 +63,9 @@ defmodule PulseWeb.DashboardLive do
   defp load_data(socket) do
     user = socket.assigns.current_user
     period = socket.assigns.period
-    today = Elixir.Pulse.Footprint.local_today(user)
-
-    {from_date, to_date} =
-      case period do
-        :day ->
-          {today, today}
-
-        :week ->
-          week_start = Date.add(today, -Date.day_of_week(today) + 1)
-          {week_start, today}
-
-        :month ->
-          {Date.beginning_of_month(today), today}
-      end
-
-    summaries = Summaries.list_summaries(user.id, from_date, to_date)
+    summary = Footprint.period_summary(user, period)
+    summaries = Summaries.list_summaries(user.id, summary.from, summary.to)
     suggestions = Suggestions.list_active_suggestions(user.id)
-    pulse = Pulse.daily(user.id)
-    footprint = Elixir.Pulse.Footprint.result(user.id, today)
 
     total_cost =
       Enum.reduce(summaries, Decimal.new(0), fn s, acc -> Decimal.add(acc, s.total_cost) end)
@@ -89,42 +73,32 @@ defmodule PulseWeb.DashboardLive do
     total_kwh =
       Enum.reduce(summaries, Decimal.new(0), fn s, acc -> Decimal.add(acc, s.total_kwh) end)
 
-    chart_data = build_chart_data(summaries)
+    chart_data = %{
+      labels: Enum.map(summary.points, &Date.to_iso8601(&1.date)),
+      watts: Enum.map(summary.points, & &1.watts)
+    }
 
     socket
     |> assign(:summaries, summaries)
     |> assign(:suggestions, suggestions)
-    |> assign(:pulse, pulse)
-    |> assign(:footprint, footprint)
+    |> assign(:summary, summary)
     |> assign(:total_cost, total_cost)
     |> assign(:total_kwh, total_kwh)
     |> assign(:chart_data, chart_data)
-    |> push_event("chart_data_updated", %{data: chart_data})
-  end
-
-  defp build_chart_data(summaries) do
-    %{
-      labels: Enum.map(summaries, &Date.to_iso8601(&1.date)),
-      costs: Enum.map(summaries, &Decimal.to_float(&1.total_cost)),
-      kwh: Enum.map(summaries, &Decimal.to_float(&1.total_kwh))
-    }
+    |> push_event("pulse_chart_updated", %{data: chart_data})
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-8">
-      <%!-- Header --%>
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p class="text-gray-500 text-sm">Hi {@current_user.email}</p>
-        </div>
-        <div class="flex gap-2">
+      <.pulse_hero summary={@summary}>
+        <:controls>
           <button
             :for={p <- [:day, :week, :month]}
             phx-click="change_period"
             phx-value-period={p}
+            aria-pressed={to_string(@period == p)}
             class={[
               "px-3 py-1.5 rounded-lg text-sm font-medium transition",
               @period == p && "bg-green-600 text-white",
@@ -133,41 +107,57 @@ defmodule PulseWeb.DashboardLive do
           >
             {String.capitalize(to_string(p))}
           </button>
+        </:controls>
+      </.pulse_hero>
+
+      <section class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-sm font-semibold text-gray-700">Daily average power</h2>
+        <p class="text-sm text-slate-500 mt-1 mb-4">
+          Watts for each local day in the selected period. Gaps mean no calculation is available.
+        </p>
+        <div class="relative h-64">
+          <canvas
+            id="pulse-chart"
+            phx-hook="PulseChart"
+            data-chart={Jason.encode!(@chart_data)}
+            role="img"
+            aria-label="Daily average power in watts; daily values follow below"
+          />
         </div>
-      </div>
+        <details class="mt-3 text-sm text-slate-600">
+          <summary class="cursor-pointer">Daily values</summary>
+          <ul class="mt-2 space-y-1">
+            <li :for={point <- @summary.points}>
+              {point.date}: {if is_nil(point.watts),
+                do: "Not calculated",
+                else: "#{point.watts} watts"}
+            </li>
+          </ul>
+        </details>
+      </section>
 
-      <.footprint_card result={@footprint} />
-
-      <%!-- Secondary stats --%>
-      <p class="text-sm text-slate-500">
-        Logged emissions estimate (legacy factors): {Decimal.round(@pulse.emissions_kg, 2)} kg CO₂e. This is separate from your energy footprint.
-      </p>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <.stat_card
-          label={"Total cost (#{@period})"}
-          value={"$#{Decimal.round(@total_cost, 2)}"}
-        />
-        <.stat_card
-          label={"Energy used (#{@period})"}
-          value={Decimal.round(@total_kwh, 1) |> to_string()}
-          unit="kWh"
-        />
-        <.stat_card
-          label="Active suggestions"
-          value={length(@suggestions) |> to_string()}
-        />
-      </div>
-
-      <%!-- Chart --%>
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Energy cost over time</h2>
-        <canvas
-          id="energy-chart"
-          phx-hook="EnergyChart"
-          data-chart={Jason.encode!(@chart_data)}
-          class="w-full h-64"
-        />
-      </div>
+      <details class="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+        <summary class="cursor-pointer text-sm font-semibold text-gray-700">
+          Logged utility usage and costs
+        </summary>
+        <p class="text-sm text-slate-500">
+          These totals cover your usage logs for the selected period. They use delivered energy, separate from the source-energy Pulse estimate above.
+        </p>
+        <div :if={@summaries != []} class="grid grid-cols-2 gap-4">
+          <.stat_card label="Logged cost" value={"$#{Decimal.round(@total_cost, 2)}"} />
+          <.stat_card
+            label="Logged energy"
+            value={Decimal.round(@total_kwh, 1) |> to_string()}
+            unit="kWh"
+          />
+        </div>
+        <p :if={@summaries == []} class="text-sm text-slate-600">
+          No utility usage logged for this period. <.link
+            href={~p"/logs"}
+            class="text-green-700 underline"
+          >Add a usage log</.link>.
+        </p>
+      </details>
 
       <%!-- Suggestions --%>
       <div :if={@suggestions != []}>
@@ -175,16 +165,6 @@ defmodule PulseWeb.DashboardLive do
         <div class="space-y-3">
           <.suggestion_card :for={s <- @suggestions} suggestion={s} />
         </div>
-      </div>
-
-      <%!-- Empty state --%>
-      <div :if={@summaries == [] and @suggestions == []} class="text-center py-16 text-gray-400">
-        <p class="text-4xl mb-4">📊</p>
-        <p class="font-medium text-gray-600">No data yet</p>
-        <p class="text-sm mt-1">
-          <.link href={~p"/setup"} class="text-green-600 hover:underline">Set up your devices</.link>
-          then <.link href={~p"/logs"} class="text-green-600 hover:underline">log your first usage</.link>.
-        </p>
       </div>
     </div>
     """
