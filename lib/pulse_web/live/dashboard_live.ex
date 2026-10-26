@@ -140,15 +140,13 @@ defmodule PulseWeb.DashboardLive do
         <p class="text-sm text-slate-500 mt-1 mb-4">
           Watts for each local day in the selected period. Gaps mean no calculation is available.
         </p>
-        <div class="relative h-64">
-          <canvas
-            id="pulse-chart"
-            phx-hook="PulseChart"
-            data-chart={Jason.encode!(@chart_data)}
-            role="img"
-            aria-label="Daily average power in watts; daily values follow below"
-          />
-        </div>
+        <div
+          id="pulse-chart"
+          phx-hook="PulseChart"
+          phx-update="ignore"
+          data-chart={Jason.encode!(@chart_data)}
+          class="w-full min-w-0"
+        />
         <details class="mt-3 text-sm text-slate-600">
           <summary class="cursor-pointer">Daily values</summary>
           <ul class="mt-2 space-y-1">
