@@ -99,3 +99,14 @@ Activation order: provision or identify the Phoenix app/database; configure its 
 Pulse's public origin is `https://pulse.brainsand.space`, hosted by the Fly app `pulse-david-baker` with a dedicated `pulse-postgres` database in the personal organization. Browser links on the old Fly hostname redirect to the public origin, preserving paths and queries. Service API calls remain compatible during the transition; set Dagster's `PULSE_URL` to the public origin after DNS and HTTPS are verified. The maintained Dagster deployment is `carbon-intensity`. Deployment credentials must be authorized for the corresponding app; CI uses `PULSE_FLY_API_TOKEN` for Phoenix and the existing `FLY_API_TOKEN` for Dagster.
 
 Namecheap DNS: add CNAME `pulse` → `yj8wm9n.pulse-david-baker.fly.dev` (automatic TTL). Fly manages the certificate for `pulse.brainsand.space`. Verify DNS and certificate readiness before deploying the canonical hostname configuration.
+
+### Dashboard period averages
+
+The dashboard reads saved daily results for today, the calendar week (Monday
+through today), or month to date. Average watts is the sum of source kWh times
+1,000, divided by the actual local-day hours of available results (including DST).
+Today's result remains a full-day estimate. Missing dates and results saved for a
+different account timezone are unavailable, never zero-filled; the UI shows
+coverage and gaps. Category totals and scenario bounds use those same available
+days; observed share is energy-weighted. These are presentation aggregates and do
+not change the canonical daily calculation or the metrics published to Flambe.
