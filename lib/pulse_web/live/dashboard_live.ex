@@ -3,6 +3,7 @@ defmodule PulseWeb.DashboardLive do
   import PulseWeb.FootprintComponents
 
   alias Pulse.{Footprint, Notifications, Suggestions, Summaries}
+  alias Pulse.Footprint.PeriodSummary
 
   @periods [:day, :week, :month]
 
@@ -31,7 +32,7 @@ defmodule PulseWeb.DashboardLive do
     period = Enum.find(@periods, &(to_string(&1) == period))
 
     if period in @periods do
-      {:noreply, socket |> assign(:period, period) |> load_data()}
+      {:noreply, socket |> assign(:period, period) |> select_period()}
     else
       {:noreply, socket}
     end
@@ -62,10 +63,35 @@ defmodule PulseWeb.DashboardLive do
 
   defp load_data(socket) do
     user = socket.assigns.current_user
-    period = socket.assigns.period
-    summary = Footprint.period_summary(user, period)
-    summaries = Summaries.list_summaries(user.id, summary.from, summary.to)
-    suggestions = Suggestions.list_active_suggestions(user.id)
+    today = Footprint.local_today(user)
+    {week_start, _} = PeriodSummary.bounds(today, :week)
+    first = Enum.min([week_start, Date.beginning_of_month(today)], Date)
+
+    socket
+    |> assign(:today, today)
+    |> assign(:footprint_results, Footprint.results_in_range(user.id, first, today))
+    |> assign(:usage_summaries, Summaries.list_summaries(user.id, first, today))
+    |> assign(:suggestions, Suggestions.list_active_suggestions(user.id))
+    |> select_period()
+  end
+
+  defp select_period(socket) do
+    {first, last} = PeriodSummary.bounds(socket.assigns.today, socket.assigns.period)
+
+    summary =
+      PeriodSummary.new(
+        socket.assigns.footprint_results,
+        socket.assigns.period,
+        first,
+        last,
+        socket.assigns.current_user.timezone
+      )
+
+    summaries =
+      Enum.filter(
+        socket.assigns.usage_summaries,
+        &(Date.compare(&1.date, first) != :lt and Date.compare(&1.date, last) != :gt)
+      )
 
     total_cost =
       Enum.reduce(summaries, Decimal.new(0), fn s, acc -> Decimal.add(acc, s.total_cost) end)
@@ -80,7 +106,6 @@ defmodule PulseWeb.DashboardLive do
 
     socket
     |> assign(:summaries, summaries)
-    |> assign(:suggestions, suggestions)
     |> assign(:summary, summary)
     |> assign(:total_cost, total_cost)
     |> assign(:total_kwh, total_kwh)

@@ -55,14 +55,49 @@ html, body {
 .field-help:hover .help-text, .field-help:focus-within .help-text { display: block; }
 
 .pulse-hero {
-  padding: clamp(1.5rem, 4vw, 3rem);
-  border-radius: 1.5rem;
-  border: 1px solid #a7f3d0;
-  background: linear-gradient(135deg, #ecfdf5, #f8fafc);
+  padding: clamp(0.5rem, 2vw, 1.5rem) 0;
+}
+.pulse-hero-header {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  text-align: center;
+}
+.pulse-ring {
+  position: relative;
+  width: min(100%, 36rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  container-type: inline-size;
+}
+.pulse-ring-chart { display: block; width: 100%; height: 100%; }
+.pulse-ring-center {
+  position: absolute; inset: 13%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #0f172a; pointer-events: none;
 }
 .pulse-hero-number {
-  font-size: clamp(3.25rem, 18vw, 10rem);
-  line-height: 1;
+  font-size: min(24cqw, calc(110cqw / var(--score-digits)));
+  line-height: 1.1;
   letter-spacing: -0.065em;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+}
+.pulse-hero-unit { font-size: clamp(1rem, 4cqw, 1.35rem); color: #64748b; }
+.pulse-hero-caption { text-align: center; font-size: .75rem; color: #64748b; }
+.pulse-ring-segment { transition: stroke-width 120ms ease; }
+.pulse-ring-segment:hover, .pulse-ring-segment:focus { stroke-width: 8.5; outline: none; }
+.pulse-category-legend {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem;
+  max-width: 52rem; margin-inline: auto;
+}
+.pulse-category-item summary {
+  display: flex; align-items: center; gap: .65rem; cursor: pointer; list-style: none;
+}
+.pulse-category-item summary::-webkit-details-marker { display: none; }
+.pulse-category-item summary:focus-visible { outline: 2px solid #059669; outline-offset: 4px; border-radius: .25rem; }
+.pulse-category-swatch {
+  flex: 0 0 .65rem; width: .65rem; height: .65rem; border-radius: 50%;
+  background: var(--category-color);
+}
+.pulse-category-swatch.is-partial { background: transparent; border: 2px dashed var(--category-color); }
+@media (min-width: 768px) {
+  .pulse-category-legend { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

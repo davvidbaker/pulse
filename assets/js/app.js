@@ -29,6 +29,7 @@ Hooks.PulseChart = {
       },
       options: {
         responsive: true,
+        animation: false,
         maintainAspectRatio: false,
         scales: {y: {beginAtZero: true, ticks: {callback: watts}}},
         plugins: {

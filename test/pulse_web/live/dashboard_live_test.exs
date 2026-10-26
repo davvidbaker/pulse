@@ -38,6 +38,18 @@ defmodule PulseWeb.DashboardLiveTest do
 
     assert_push_event(view, "pulse_chart_updated", %{data: _initial})
 
+    telemetry_id = {__MODULE__, make_ref()}
+    owner = self()
+
+    :telemetry.attach(
+      telemetry_id,
+      [:pulse, :repo, :query],
+      fn _, _, _, pid -> if self() != pid, do: send(pid, :dashboard_query) end,
+      owner
+    )
+
+    on_exit(fn -> :telemetry.detach(telemetry_id) end)
+
     for period <- [:day, :week, :month] do
       view |> element("button[phx-value-period=#{period}]") |> render_click()
       summary = Footprint.period_summary(user, period, today)
@@ -68,7 +80,26 @@ defmodule PulseWeb.DashboardLiveTest do
       assert_push_event(view, "pulse_chart_updated", %{data: %{labels: labels, watts: watts}})
       assert labels == Enum.map(summary.points, &Date.to_iso8601(&1.date))
       assert watts == Enum.map(summary.points, & &1.watts)
+      refute_received :dashboard_query
     end
+
+    :telemetry.detach(telemetry_id)
+    today_result = Footprint.result(user.id, today)
+
+    {day_start, day_end} = Footprint.day_bounds(today, user.timezone)
+    day_hours = DateTime.diff(day_end, day_start, :second) / 3600
+
+    Repo.update!(
+      Ecto.Changeset.change(today_result,
+        data: Map.put(today_result.data, "total_kwh", day_hours * 100)
+      )
+    )
+
+    send(view.pid, :refresh_footprint)
+    render(view)
+    view |> element("button[phx-value-period=day]") |> render_click()
+    assert has_element?(view, "#pulse-hero-score", "100,000")
+    view |> element("button[phx-value-period=month]") |> render_click()
 
     render_click(view, "change_period", %{"period" => "invalid-period"})
     assert has_element?(view, "#pulse-hero[data-period=month]")

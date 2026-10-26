@@ -256,14 +256,16 @@ defmodule Pulse.Footprint do
     today = today || local_today(user)
     {first, last} = Pulse.Footprint.PeriodSummary.bounds(today, period)
 
-    results =
-      Repo.all(
-        from r in Result,
-          where: r.user_id == ^user.id and r.date >= ^first and r.date <= ^last,
-          order_by: r.date
-      )
-
+    results = results_in_range(user.id, first, last)
     Pulse.Footprint.PeriodSummary.new(results, period, first, last, user.timezone)
+  end
+
+  def results_in_range(user_id, first, last) do
+    Repo.all(
+      from r in Result,
+        where: r.user_id == ^user_id and r.date >= ^first and r.date <= ^last,
+        order_by: r.date
+    )
   end
 
   def save_result(user, day, data) do
